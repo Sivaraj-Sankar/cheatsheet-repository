@@ -1,0 +1,321 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#f0f6ff;--surface:#ffffff;--surface2:#e8f2ff;
+    --border:#c5d8f5;--border2:#a8c4ee;
+    --accent:#2563eb;--accent2:#3b82f6;--accent3:#1d4ed8;
+    --text:#0f1b35;--text2:#3a5080;--text3:#6b87b8;
+    --kw:#1d4ed8;--fn:#0891b2;--str:#16a34a;--num:#9333ea;
+    --cm:#6b87b8;--op:#0f1b35;--cls:#b45309;--bi:#0891b2;
+    --code-bg:#f0f6ff;--code-border:#c5d8f5;
+  }
+  body{background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);padding:20px 16px;min-height:100vh}
+  h1{font-size:18px;font-weight:600;color:var(--accent3);letter-spacing:-0.02em;margin-bottom:4px}
+  .subtitle{font-size:12px;color:var(--text3);margin-bottom:20px;font-family:'JetBrains Mono',monospace}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+  .card-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px}
+  .card-num{width:20px;height:20px;background:var(--accent);color:#fff;border-radius:50%;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .card-title{font-size:12px;font-weight:600;color:var(--accent3);letter-spacing:0.01em;text-transform:uppercase}
+  .card-body{padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:8px}
+  pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:6px;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.65;overflow-x:auto;flex:1;white-space:pre}
+  .note{font-size:11px;color:var(--text3);background:var(--surface2);border-left:2px solid var(--accent2);padding:5px 8px;border-radius:0 4px 4px 0;font-family:'JetBrains Mono',monospace}
+  .kw{color:var(--kw);font-weight:600}
+  .fn{color:var(--fn)}
+  .str{color:var(--str)}
+  .num{color:var(--num)}
+  .cm{color:var(--cm);font-style:italic}
+  .cls{color:var(--cls);font-weight:600}
+  .bi{color:var(--bi)}
+  .op{color:var(--op)}
+  .section-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin:6px 0 2px}
+  .tab-bar{display:flex;gap:4px;padding:10px 14px 0;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .tab{font-size:11px;padding:4px 10px;border-radius:6px 6px 0 0;cursor:pointer;border:1px solid transparent;border-bottom:none;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--text3);background:transparent;transition:all 0.15s}
+  .tab.active{background:var(--surface);border-color:var(--border);color:var(--accent3)}
+  .tab:hover:not(.active){color:var(--accent)}
+  .panel{display:none}.panel.active{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
+  .output{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:3px 6px;border-radius:4px;background:var(--surface2)}
+  .full-card{grid-column:1/-1}
+  .dp-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:500px){.dp-wrap{grid-template-columns:1fr}}
+</style>
+
+<h1>Python Strings — Cheatsheet</h1>
+<p class="subtitle"># string operations · characters · substrings · patterns</p>
+
+<div class="grid">
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">1</div><div class="card-title">Most Frequent Character</div></div>
+    <div class="card-body">
+<pre><span class="kw">def</span> <span class="fn">most_frequent_char</span>(s):
+  <span class="kw">if not</span> s: <span class="kw">return</span> <span class="bi">None</span>
+  freq = {}
+  <span class="kw">for</span> ch <span class="kw">in</span> s:
+    freq[ch] = freq.<span class="fn">get</span>(ch, <span class="num">0</span>) + <span class="num">1</span>
+  max_char = <span class="fn">max</span>(freq, key=freq.get)
+  <span class="kw">return</span> max_char, freq[max_char]
+
+<span class="fn">most_frequent_char</span>(<span class="str">"programming"</span>)
+<span class="cm"># → ('g', 2)</span></pre>
+      <div class="note">dict.get(key, default) avoids KeyError on first occurrence</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">2</div><div class="card-title">Check Duplicate Characters</div></div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab(this,'dup')">set (O(n))</button>
+      <button class="tab" onclick="switchTab(this,'dup2')">seen set</button>
+      <button class="tab" onclick="switchTab(this,'dup3')">freq dict</button>
+    </div>
+    <div class="panel active" id="dup">
+<pre><span class="kw">def</span> <span class="fn">has_duplicates</span>(s):
+  <span class="kw">return</span> <span class="fn">len</span>(s) != <span class="fn">len</span>(<span class="fn">set</span>(s))
+
+<span class="fn">has_duplicates</span>(<span class="str">"hello"</span>)  <span class="cm"># True</span>
+<span class="fn">has_duplicates</span>(<span class="str">"world"</span>)  <span class="cm"># False</span></pre>
+    </div>
+    <div class="panel" id="dup2">
+<pre><span class="kw">def</span> <span class="fn">has_duplicates</span>(s):
+  seen = <span class="fn">set</span>()
+  <span class="kw">for</span> ch <span class="kw">in</span> s:
+    <span class="kw">if</span> ch <span class="kw">in</span> seen: <span class="kw">return</span> <span class="bi">True</span>
+    seen.<span class="fn">add</span>(ch)
+  <span class="kw">return</span> <span class="bi">False</span>
+
+<span class="fn">has_duplicates</span>(<span class="str">"hello"</span>)  <span class="cm"># True</span></pre>
+    </div>
+    <div class="panel" id="dup3">
+<pre><span class="kw">def</span> <span class="fn">has_duplicates</span>(s):
+  freq = {}
+  <span class="kw">for</span> ch <span class="kw">in</span> s:
+    freq[ch] = freq.<span class="fn">get</span>(ch, <span class="num">0</span>) + <span class="num">1</span>
+    <span class="kw">if</span> freq[ch] > <span class="num">1</span>: <span class="kw">return</span> <span class="bi">True</span>
+  <span class="kw">return</span> <span class="bi">False</span></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">3</div><div class="card-title">Anagram Check</div></div>
+    <div class="card-body">
+<pre><span class="kw">def</span> <span class="fn">is_anagram</span>(s1, s2):
+  <span class="kw">return</span> <span class="fn">sorted</span>(s1) == <span class="fn">sorted</span>(s2)
+
+<span class="cm"># O(n log n) — sort both, compare</span>
+<span class="fn">is_anagram</span>(<span class="str">"listen"</span>, <span class="str">"silent"</span>)
+<span class="cm"># → True</span>
+
+<span class="cm"># O(n) alternative:</span>
+<span class="kw">from</span> <span class="cls">collections</span> <span class="kw">import</span> <span class="cls">Counter</span>
+<span class="fn">Counter</span>(s1) == <span class="fn">Counter</span>(s2)</pre>
+      <div class="note">Counter approach is faster for large strings</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">4</div><div class="card-title">Reverse a String</div></div>
+    <div class="card-body">
+<pre><span class="kw">def</span> <span class="fn">reverse_string</span>(s):
+  <span class="kw">return</span> s[::<span class="num">-1</span>]     <span class="cm"># slice trick</span>
+
+<span class="fn">reverse_string</span>(<span class="str">"hello"</span>) <span class="cm"># "olleh"</span>
+
+<span class="cm"># Alternatives:</span>
+<span class="str">""</span>.<span class="fn">join</span>(<span class="fn">reversed</span>(s))   <span class="cm"># iterator</span>
+<span class="fn">list</span>(s)[::<span class="num">-1</span>]           <span class="cm"># list then join</span></pre>
+      <div class="note">s[::-1] is idiomatic and fastest in CPython</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">5</div><div class="card-title">First Non-Repeating Character</div></div>
+    <div class="card-body">
+<pre><span class="kw">from</span> <span class="cls">collections</span> <span class="kw">import</span> <span class="cls">Counter</span>
+
+<span class="kw">def</span> <span class="fn">first_unique_char</span>(s):
+  count = <span class="fn">Counter</span>(s)
+  <span class="kw">for</span> ch <span class="kw">in</span> s:
+    <span class="kw">if</span> count[ch] == <span class="num">1</span>:
+      <span class="kw">return</span> ch
+  <span class="kw">return</span> <span class="bi">None</span>
+
+<span class="fn">first_unique_char</span>(<span class="str">"aabbcde"</span>)
+<span class="cm"># → 'c'</span></pre>
+      <div class="note">Two-pass O(n): count all, then scan order</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">6</div><div class="card-title">Palindrome Check</div></div>
+    <div class="card-body">
+<pre><span class="kw">def</span> <span class="fn">is_palindrome</span>(s):
+  s = s.<span class="fn">lower</span>().<span class="fn">replace</span>(<span class="str">" "</span>, <span class="str">""</span>)
+  <span class="kw">return</span> s == s[::<span class="num">-1</span>]
+
+<span class="fn">is_palindrome</span>(<span class="str">"madam"</span>)      <span class="cm"># True</span>
+<span class="fn">is_palindrome</span>(<span class="str">"Race car"</span>)   <span class="cm"># True</span>
+<span class="fn">is_palindrome</span>(<span class="str">"hello"</span>)      <span class="cm"># False</span></pre>
+      <div class="note">Normalize: lowercase + strip spaces before comparing</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">7</div><div class="card-title">Remove Duplicates (preserve order)</div></div>
+    <div class="card-body">
+<pre><span class="kw">def</span> <span class="fn">remove_duplicates</span>(s):
+  <span class="kw">return</span> <span class="str">""</span>.<span class="fn">join</span>(<span class="fn">dict</span>.<span class="fn">fromkeys</span>(s))
+
+<span class="fn">remove_duplicates</span>(<span class="str">"programming"</span>)
+<span class="cm"># → "progamin"</span>
+
+<span class="cm"># dict.fromkeys preserves insertion order</span>
+<span class="cm"># (Python 3.7+). set() does NOT preserve.</span></pre>
+      <div class="note">dict.fromkeys(s) → unique keys in original order</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-num">8</div><div class="card-title">Longest Unique Substring (Sliding Window)</div></div>
+    <div class="card-body">
+<pre><span class="kw">def</span> <span class="fn">longest_unique_substring</span>(s):
+  seen = <span class="fn">set</span>()
+  left = max_len = <span class="num">0</span>
+  <span class="kw">for</span> right <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s)):
+    <span class="kw">while</span> s[right] <span class="kw">in</span> seen:
+      seen.<span class="fn">remove</span>(s[left])
+      left += <span class="num">1</span>
+    seen.<span class="fn">add</span>(s[right])
+    max_len = <span class="fn">max</span>(max_len, right-left+<span class="num">1</span>)
+  <span class="kw">return</span> max_len
+
+<span class="fn">longest_unique_substring</span>(<span class="str">"abcabcbb"</span>)
+<span class="cm"># → 3  ("abc")</span></pre>
+      <div class="note">Two-pointer O(n) — shrink window when duplicate found</div>
+    </div>
+  </div>
+
+  <div class="card full-card">
+    <div class="card-header"><div class="card-num">9</div><div class="card-title">Longest Common Substring — Brute Force vs DP</div></div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab(this,'lcs1')">brute force O(n³)</button>
+      <button class="tab" onclick="switchTab(this,'lcs2')">DP O(n·m)</button>
+      <button class="tab" onclick="switchTab(this,'lcs3')">DP matrix explained</button>
+    </div>
+    <div class="panel active" id="lcs1">
+<pre><span class="kw">def</span> <span class="fn">longest_common_substring</span>(s1, s2):
+  max_sub = <span class="str">""</span>
+  <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(s1)):
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(i+<span class="num">1</span>, <span class="fn">len</span>(s1)+<span class="num">1</span>):
+      sub = s1[i:j]
+      <span class="kw">if</span> sub <span class="kw">in</span> s2 <span class="kw">and</span> <span class="fn">len</span>(sub) > <span class="fn">len</span>(max_sub):
+        max_sub = sub
+  <span class="kw">return</span> max_sub
+
+<span class="fn">longest_common_substring</span>(<span class="str">"abcdxyz"</span>, <span class="str">"xyzabcd"</span>)
+<span class="cm"># → "abcd"</span></pre>
+    </div>
+    <div class="panel" id="lcs2">
+<pre><span class="kw">def</span> <span class="fn">longest_common_substring</span>(s1, s2):
+  m, n = <span class="fn">len</span>(s1), <span class="fn">len</span>(s2)
+  dp = [[<span class="num">0</span>]*(n+<span class="num">1</span>) <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(m+<span class="num">1</span>)]
+  max_len = end_idx = <span class="num">0</span>
+
+  <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, m+<span class="num">1</span>):
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n+<span class="num">1</span>):
+      <span class="kw">if</span> s1[i-<span class="num">1</span>] == s2[j-<span class="num">1</span>]:
+        dp[i][j] = dp[i-<span class="num">1</span>][j-<span class="num">1</span>] + <span class="num">1</span>
+        <span class="kw">if</span> dp[i][j] > max_len:
+          max_len = dp[i][j]
+          end_idx = i
+
+  <span class="kw">return</span> s1[end_idx - max_len : end_idx]
+
+<span class="fn">longest_common_substring</span>(<span class="str">"abcdxyz"</span>, <span class="str">"xyzabcd"</span>)
+<span class="cm"># → "abcd"</span></pre>
+    </div>
+    <div class="panel" id="lcs3">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.8;color:var(--text2)">
+        <div style="margin-bottom:10px;font-weight:600;color:var(--accent3)">How the DP table works — "abcd" vs "xyzabcd"</div>
+        <div style="margin-bottom:6px">dp[i][j] = length of longest common substring ending at s1[i-1] and s2[j-1]</div>
+        <pre style="border:none;background:none;padding:0;font-size:11px">      x  y  z  a  b  c  d
+   [  0  0  0  0  0  0  0  0 ]
+a  [  0  0  0  0 <span style="background:#dbeafe;color:#1e40af;padding:0 3px;border-radius:3px">1</span>  0  0  0 ]
+b  [  0  0  0  0  0 <span style="background:#dbeafe;color:#1e40af;padding:0 3px;border-radius:3px">2</span>  0  0 ]
+c  [  0  0  0  0  0  0 <span style="background:#dbeafe;color:#1e40af;padding:0 3px;border-radius:3px">3</span>  0 ]
+d  [  0  0  0  0  0  0  0 <span style="background:#bfdbfe;color:#1d4ed8;padding:0 3px;border-radius:3px;font-weight:600">4</span> ]  ← max_len=4
+x  [  0  1  0  0  0  0  0  0 ]
+y  [  0  0  2  0  0  0  0  0 ]
+z  [  0  0  0  3  0  0  0  0 ]</pre>
+        <div style="margin-top:8px;color:var(--text3)">Rule: if chars match → dp[i][j] = dp[i-1][j-1] + 1 (extend diagonal)</div>
+        <div style="color:var(--text3)">if no match  → dp[i][j] = 0 (reset, substring must be contiguous)</div>
+        <div style="margin-top:6px;color:var(--accent2)">Track max value + its position → slice s1 to recover the substring</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card full-card">
+    <div class="card-header"><div class="card-num">10</div><div class="card-title">Functional Tools — map · filter · reduce · input</div></div>
+    <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+      <div>
+        <div class="section-label">map — transform each element</div>
+<pre><span class="cm"># Square every number</span>
+a = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
+a = <span class="fn">list</span>(<span class="fn">map</span>(<span class="kw">lambda</span> x: x*x, a))
+<span class="cm"># → [1, 4, 9, 16]</span>
+
+<span class="cm"># Convert types</span>
+nums = <span class="fn">list</span>(<span class="fn">map</span>(<span class="fn">int</span>, [<span class="str">"1"</span>,<span class="str">"2"</span>,<span class="str">"3"</span>]))
+<span class="cm"># → [1, 2, 3]</span></pre>
+      </div>
+      <div>
+        <div class="section-label">filter — keep elements matching condition</div>
+<pre><span class="cm"># Keep values > 2</span>
+a = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
+a = <span class="fn">list</span>(<span class="fn">filter</span>(<span class="kw">lambda</span> x: x > <span class="num">2</span>, a))
+<span class="cm"># → [3, 4]</span>
+
+<span class="cm"># Keep only even numbers</span>
+a = <span class="fn">list</span>(<span class="fn">filter</span>(<span class="kw">lambda</span> x: x%<span class="num">2</span>==<span class="num">0</span>, a))
+<span class="cm"># → [4]</span></pre>
+      </div>
+      <div>
+        <div class="section-label">reduce — fold to single value</div>
+<pre><span class="kw">from</span> <span class="cls">functools</span> <span class="kw">import</span> <span class="fn">reduce</span>
+
+b = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
+total = <span class="fn">reduce</span>(<span class="kw">lambda</span> x,y: x+y, b)
+<span class="cm"># → 10  (1+2+3+4)</span>
+
+product = <span class="fn">reduce</span>(<span class="kw">lambda</span> x,y: x*y, b)
+<span class="cm"># → 24  (1*2*3*4)</span></pre>
+      </div>
+      <div>
+        <div class="section-label">input parsing — split + cast</div>
+<pre><span class="cm"># Space-separated ints from stdin</span>
+a = <span class="fn">list</span>(<span class="fn">map</span>(<span class="fn">int</span>, <span class="fn">input</span>().<span class="fn">split</span>()))
+<span class="cm"># "1 2 3 4"  → [1, 2, 3, 4]</span>
+
+<span class="cm"># As strings</span>
+a = <span class="fn">list</span>(<span class="fn">map</span>(<span class="fn">str</span>, <span class="fn">input</span>().<span class="fn">split</span>()))
+<span class="cm"># "a b c"  → ['a', 'b', 'c']</span>
+
+<span class="cm"># Single line of multiple values</span>
+x, y, z = <span class="fn">map</span>(<span class="fn">int</span>, <span class="fn">input</span>().<span class="fn">split</span>())</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function switchTab(btn, panelId) {
+  const card = btn.closest('.card');
+  card.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  card.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  card.querySelector('#'+panelId).classList.add('active');
+}
+</script>
