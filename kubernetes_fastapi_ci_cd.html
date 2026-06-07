@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CI/CD + Kubernetes + FastAPI Guide</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f9ff;
+    margin: 0;
+    color: #1a1a1a;
+  }
+
+  header {
+    background: #d6eaff;
+    padding: 22px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  section {
+    margin: 20px;
+    padding: 18px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  h2 {
+    color: #2a6fbe;
+  }
+
+  .box {
+    display: inline-block;
+    padding: 10px 14px;
+    margin: 6px;
+    border-radius: 8px;
+    background: #e8f3ff;
+    border: 1px solid #b9dcff;
+    font-size: 14px;
+  }
+
+  .arrow {
+    font-size: 18px;
+    margin: 0 6px;
+    color: #2a6fbe;
+  }
+
+  .diagram {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  code {
+    display: block;
+    background: #eef6ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    white-space: pre-wrap;
+  }
+
+  .flow {
+    background: #e8f3ff;
+    border-left: 4px solid #2a6fbe;
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  ul {
+    line-height: 1.6;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  CI/CD Pipeline + Kubernetes + FastAPI (End-to-End Guide)
+</header>
+
+<!-- 1 -->
+<section>
+<h2>1. Full CI/CD Architecture</h2>
+
+<div class="diagram">
+  <div class="box">Developer</div>
+  <div class="arrow">→</div>
+
+  <div class="box">GitHub Repo</div>
+  <div class="arrow">→</div>
+
+  <div class="box">GitHub Actions</div>
+  <div class="arrow">→</div>
+
+  <div class="box">Docker Image</div>
+  <div class="arrow">→</div>
+
+  <div class="box">Container Registry</div>
+  <div class="arrow">→</div>
+
+  <div class="box">Kubernetes Cluster</div>
+</div>
+
+<div class="flow">
+Every commit triggers automatic build → test → deploy pipeline.
+</div>
+</section>
+
+<!-- 2 -->
+<section>
+<h2>2. CI/CD Pipeline (GitHub Actions)</h2>
+
+<code>
+name: CI-CD to Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: yourusername/myfastapi
+  IMAGE_TAG: v1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Image
+        run: docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+      - name: Push Image
+        run: docker push $IMAGE_NAME:$IMAGE_TAG
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deployment fastapi-deployment \
+          fastapi-container=$IMAGE_NAME:$IMAGE_TAG
+</code>
+</section>
+
+<!-- 3 -->
+<section>
+<h2>3. Kubernetes Deployment (FastAPI)</h2>
+
+<code>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi-container
+          image: yourusername/myfastapi:v1
+          ports:
+            - containerPort: 8000
+</code>
+
+<div class="flow">
+Deployment manages multiple Pods automatically.
+</div>
+</section>
+
+<!-- 4 -->
+<section>
+<h2>4. Service (Internal Routing)</h2>
+
+<code>
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  selector:
+    app: fastapi
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
+</code>
+
+<div class="flow">
+Service → stable access point for Pods
+</div>
+</section>
+
+<!-- 5 -->
+<section>
+<h2>5. Ingress (Public URL Access 🌐)</h2>
+
+<code>
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-ingress
+spec:
+  rules:
+    - host: fastapi.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fastapi-service
+                port:
+                  number: 80
+</code>
+
+<div class="flow">
+https://fastapi.local → Ingress → Service → Pods
+</div>
+</section>
+
+<!-- 6 -->
+<section>
+<h2>6. Runtime Request Flow</h2>
+
+<div class="diagram">
+  <div class="box">Browser</div>
+  <div class="arrow">→</div>
+
+  <div class="box">DNS (fastapi.local)</div>
+  <div class="arrow">→</div>
+
+  <div class="box">Ingress Controller</div>
+  <div class="arrow">→</div>
+
+  <div class="box">Service</div>
+  <div class="arrow">→</div>
+
+  <div class="box">Pods (FastAPI)</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section>
+<h2>7. Docker Image Flow</h2>
+
+<code>
+docker build -t myfastapi:v1 .
+
+docker tag myfastapi:v1 yourusername/myfastapi:v1
+
+docker push yourusername/myfastapi:v1
+</code>
+
+<div class="flow">
+Code → Docker Image → Registry → Kubernetes pulls image
+</div>
+</section>
+
+<!-- 8 -->
+<section>
+<h2>8. GitOps & Versioning Strategy</h2>
+
+<ul>
+  <li>Git is source of truth</li>
+  <li>Every commit triggers CI/CD</li>
+  <li>Docker images are versioned (v1, v2, SHA tags)</li>
+  <li>Kubernetes automatically rolls updates</li>
+</ul>
+
+<div class="flow">
+Commit → Build → Push → Deploy → Rollout
+</div>
+</section>
+
+<!-- 9 -->
+<section>
+<h2>9. Key Concepts Summary</h2>
+
+<ul>
+  <li><b>Pod</b> → runs container</li>
+  <li><b>Service</b> → stable networking</li>
+  <li><b>Deployment</b> → manages Pods</li>
+  <li><b>Ingress</b> → exposes to internet</li>
+  <li><b>GitHub Actions</b> → CI/CD automation</li>
+</ul>
+</section>
+
+</body>
+</html>

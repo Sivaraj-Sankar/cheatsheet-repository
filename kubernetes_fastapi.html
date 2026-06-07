@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kubernetes + FastAPI Guide</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f9ff;
+      color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #d6eaff;
+      padding: 20px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    section {
+      padding: 20px;
+      margin: 20px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #2a6fbe;
+    }
+    code {
+      display: block;
+      background: #eef6ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+    .flow {
+      background: #e8f3ff;
+      padding: 10px;
+      border-left: 4px solid #2a6fbe;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  Kubernetes + FastAPI Deployment Guide
+</header>
+
+<section>
+  <h2>1. Kubernetes Cluster</h2>
+  <p>A Kubernetes cluster consists of:</p>
+  <ul>
+    <li><b>Control Plane</b> – manages the system</li>
+    <li><b>Worker Nodes</b> – run applications (Pods)</li>
+  </ul>
+</section>
+
+<section>
+  <h2>2. Pod (Smallest Unit)</h2>
+  <p>A Pod runs your application container.</p>
+
+  <code>
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fastapi-pod
+  labels:
+    app: fastapi
+spec:
+  containers:
+    - name: fastapi-container
+      image: yourusername/myfastapi:v1
+      ports:
+        - containerPort: 8000
+  </code>
+</section>
+
+<section>
+  <h2>3. Service (Stable Access)</h2>
+  <p>Service exposes Pods using labels.</p>
+
+  <code>
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  selector:
+    app: fastapi
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
+  </code>
+</section>
+
+<section>
+  <h2>4. How Pod & Service Connect</h2>
+  <div class="flow">
+    Request → Service → Pod (via label matching)
+  </div>
+</section>
+
+<section>
+  <h2>5. Docker Image Flow</h2>
+
+  <code>
+# Build image
+docker build -t myfastapi:v1 .
+
+# Tag for Docker Hub
+docker tag myfastapi:v1 yourusername/myfastapi:v1
+
+# Push
+docker push yourusername/myfastapi:v1
+  </code>
+
+  <div class="flow">
+    FastAPI Code → Docker Image → Registry → Kubernetes pulls image
+  </div>
+</section>
+
+<section>
+  <h2>6. Deployment (Recommended)</h2>
+
+  <code>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi-container
+          image: yourusername/myfastapi:v1
+          ports:
+            - containerPort: 8000
+  </code>
+</section>
+
+<section>
+  <h2>7. Versioning Strategy</h2>
+  <ul>
+    <li>Use Git for code and YAML files</li>
+    <li>Version Docker images (v1, v2, v3)</li>
+    <li>Update image tag in Kubernetes YAML</li>
+  </ul>
+
+  <div class="flow">
+    Code Change → New Image → Update YAML → Deploy
+  </div>
+</section>
+
+<section>
+  <h2>8. Key Concepts Summary</h2>
+  <ul>
+    <li>Pod = runs your app</li>
+    <li>Service = stable access</li>
+    <li>Deployment = manages Pods</li>
+    <li>Docker image = packaged app</li>
+    <li>Registry = where image is stored</li>
+  </ul>
+</section>
+
+</body>
+</html>

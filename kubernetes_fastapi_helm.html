@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kubernetes CI/CD Advanced Guide</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f9ff;
+    margin: 0;
+    color: #1a1a1a;
+  }
+
+  header {
+    background: #d6eaff;
+    padding: 22px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  section {
+    margin: 20px;
+    padding: 18px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  h2 {
+    color: #2a6fbe;
+  }
+
+  .box {
+    display: inline-block;
+    padding: 10px 14px;
+    margin: 6px;
+    border-radius: 8px;
+    background: #e8f3ff;
+    border: 1px solid #b9dcff;
+    font-size: 14px;
+  }
+
+  .blue { background: #d9ecff; }
+  .green { background: #dff7e3; }
+  .yellow { background: #fff6d9; }
+
+  .arrow {
+    font-size: 18px;
+    margin: 0 6px;
+    color: #2a6fbe;
+  }
+
+  .diagram {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  code {
+    display: block;
+    background: #eef6ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    white-space: pre-wrap;
+  }
+
+  .flow {
+    background: #e8f3ff;
+    border-left: 4px solid #2a6fbe;
+    padding: 10px;
+    margin-top: 10px;
+  }
+
+  ul {
+    line-height: 1.6;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  Advanced CI/CD + Kubernetes (Blue-Green, Canary, Helm, Debugging)
+</header>
+
+<!-- CI/CD -->
+<section>
+<h2>1. Full CI/CD Flow</h2>
+
+<div class="diagram">
+  <div class="box">Developer</div>
+  <div class="arrow">→</div>
+  <div class="box">GitHub</div>
+  <div class="arrow">→</div>
+  <div class="box">GitHub Actions</div>
+  <div class="arrow">→</div>
+  <div class="box">Docker Image</div>
+  <div class="arrow">→</div>
+  <div class="box">Registry</div>
+  <div class="arrow">→</div>
+  <div class="box">Kubernetes</div>
+</div>
+
+</section>
+
+<!-- BLUE GREEN -->
+<section>
+<h2>2. Blue-Green Deployment (Zero Downtime) 🟦🟩</h2>
+
+<div class="diagram">
+
+  <div class="box blue">Blue (v1 - Live)</div>
+  <div class="arrow">← Traffic</div>
+  <div class="box">Load Balancer</div>
+  <div class="arrow">→</div>
+  <div class="box green">Green (v2 - New)</div>
+
+</div>
+
+<div class="flow">
+Switch traffic from Blue → Green after validation.
+Instant rollback = switch back to Blue.
+</div>
+
+<code>
+kubectl apply -f green-deployment.yaml
+kubectl patch service myapp -p '{"spec":{"selector":{"version":"green"}}}'
+</code>
+
+</section>
+
+<!-- CANARY -->
+<section>
+<h2>3. Canary Deployment 🐤</h2>
+
+<div class="diagram">
+
+  <div class="box blue">90% v1</div>
+  <div class="arrow">+</div>
+  <div class="box yellow">10% v2</div>
+
+</div>
+
+<div class="flow">
+Gradually route traffic to new version.
+If stable → increase traffic to v2.
+</div>
+
+<code>
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: canary-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"
+</code>
+
+</section>
+
+<!-- HELM -->
+<section>
+<h2>4. Helm (Industry Standard) ⚙️</h2>
+
+<div class="flow">
+Helm = Package Manager for Kubernetes
+</div>
+
+<code>
+helm create fastapi-chart
+
+helm install fastapi ./fastapi-chart
+
+helm upgrade fastapi ./fastapi-chart
+</code>
+
+<h3>Why Helm?</h3>
+<ul>
+  <li>Templated YAML (no duplication)</li>
+  <li>Easy environment management (dev/stage/prod)</li>
+  <li>Versioned releases</li>
+</ul>
+
+</section>
+
+<!-- DEBUGGING -->
+<section>
+<h2>5. Debugging CI/CD Failures 🔍</h2>
+
+<h3>Common Issues</h3>
+
+<ul>
+  <li>ImagePullBackOff → wrong image name or registry issue</li>
+  <li>CrashLoopBackOff → app crashing inside container</li>
+  <li>Pending Pods → no available resources</li>
+</ul>
+
+<h3>Useful Commands</h3>
+
+<code>
+kubectl get pods
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+kubectl get events
+</code>
+
+<h3>CI/CD Debugging (GitHub Actions)</h3>
+
+<code>
+# Check workflow logs in GitHub Actions tab
+# Common failures:
+- Docker login failed
+- Missing secrets
+- Wrong kubeconfig
+</code>
+
+</section>
+
+<!-- FASTAPI DEPLOYMENT -->
+<section>
+<h2>6. FastAPI Deployment Example</h2>
+
+<code>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi
+          image: yourusername/myfastapi:v1
+          ports:
+            - containerPort: 8000
+</code>
+
+</section>
+
+<!-- SERVICE -->
+<section>
+<h2>7. Service (Internal Routing)</h2>
+
+<code>
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  selector:
+    app: fastapi
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
+</code>
+
+</section>
+
+<!-- INGRESS -->
+<section>
+<h2>8. Ingress (Public Access 🌐)</h2>
+
+<code>
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-ingress
+spec:
+  rules:
+    - host: fastapi.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fastapi-service
+                port:
+                  number: 80
+</code>
+
+</section>
+
+<!-- SUMMARY -->
+<section>
+<h2>9. Final System View</h2>
+
+<div class="diagram">
+  <div class="box">Git Push</div>
+  <div class="arrow">→</div>
+  <div class="box">CI/CD</div>
+  <div class="arrow">→</div>
+  <div class="box">Docker</div>
+  <div class="arrow">→</div>
+  <div class="box">Helm / YAML</div>
+  <div class="arrow">→</div>
+  <div class="box">Kubernetes</div>
+  <div class="arrow">→</div>
+  <div class="box">Ingress</div>
+  <div class="arrow">→</div>
+  <div class="box">Users</div>
+</div>
+
+</section>
+
+</body>
+</html>

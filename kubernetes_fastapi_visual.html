@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kubernetes + FastAPI (Ingress + Visual Guide)</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f9ff;
+    margin: 0;
+    color: #1a1a1a;
+  }
+
+  header {
+    background: #d6eaff;
+    padding: 22px;
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  section {
+    margin: 20px;
+    padding: 18px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  h2 {
+    color: #2a6fbe;
+  }
+
+  .box {
+    display: inline-block;
+    padding: 10px 14px;
+    margin: 6px;
+    border-radius: 8px;
+    background: #e8f3ff;
+    border: 1px solid #b9dcff;
+    font-size: 14px;
+  }
+
+  .arrow {
+    font-size: 18px;
+    margin: 0 6px;
+    color: #2a6fbe;
+  }
+
+  .diagram {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  code {
+    display: block;
+    background: #eef6ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    white-space: pre-wrap;
+  }
+
+  .flow {
+    background: #e8f3ff;
+    border-left: 4px solid #2a6fbe;
+    padding: 10px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+  Kubernetes + FastAPI Deployment (with Ingress & Visuals)
+</header>
+
+<!-- 1 -->
+<section>
+<h2>1. Kubernetes Architecture (Big Picture)</h2>
+
+<div class="diagram">
+  <div class="box">User / Browser</div>
+  <div class="arrow">↓</div>
+
+  <div class="box">Ingress</div>
+  <div class="arrow">↓</div>
+
+  <div class="box">Service</div>
+  <div class="arrow">↓</div>
+
+  <div class="box">Pod 1</div>
+  <div class="box">Pod 2</div>
+  <div class="box">Pod 3</div>
+</div>
+
+<div class="flow">
+User → Ingress → Service → Pods (FastAPI instances)
+</div>
+</section>
+
+<!-- 2 -->
+<section>
+<h2>2. Pod (Your FastAPI App)</h2>
+
+<code>
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fastapi-pod
+  labels:
+    app: fastapi
+spec:
+  containers:
+    - name: fastapi-container
+      image: yourusername/myfastapi:v1
+      ports:
+        - containerPort: 8000
+</code>
+
+<div class="flow">
+Pod runs your FastAPI container inside a Kubernetes Node.
+</div>
+</section>
+
+<!-- 3 -->
+<section>
+<h2>3. Service (Stable Access Layer)</h2>
+
+<code>
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi-service
+spec:
+  selector:
+    app: fastapi
+  ports:
+    - port: 80
+      targetPort: 8000
+  type: ClusterIP
+</code>
+
+<div class="diagram">
+  <div class="box">Service (fastapi-service)</div>
+  <div class="arrow">→</div>
+  <div class="box">Pod A</div>
+  <div class="box">Pod B</div>
+</div>
+</section>
+
+<!-- 4 -->
+<section>
+<h2>4. Ingress (Real URL Access 🌐)</h2>
+
+<p>Ingress exposes your app to the internet using a domain name.</p>
+
+<code>
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapi-ingress
+spec:
+  rules:
+    - host: fastapi.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fastapi-service
+                port:
+                  number: 80
+</code>
+
+<div class="flow">
+https://fastapi.local → Ingress → Service → Pods
+</div>
+</section>
+
+<!-- 5 -->
+<section>
+<h2>5. Full Request Flow (End-to-End)</h2>
+
+<div class="diagram">
+  <div class="box">Browser</div>
+  <div class="arrow">→</div>
+  <div class="box">DNS (fastapi.local)</div>
+  <div class="arrow">→</div>
+  <div class="box">Ingress Controller</div>
+  <div class="arrow">→</div>
+  <div class="box">Service</div>
+  <div class="arrow">→</div>
+  <div class="box">Pod</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section>
+<h2>6. Docker Image Flow</h2>
+
+<code>
+docker build -t myfastapi:v1 .
+
+docker tag myfastapi:v1 yourusername/myfastapi:v1
+
+docker push yourusername/myfastapi:v1
+</code>
+
+<div class="flow">
+FastAPI Code → Docker Image → Registry → Kubernetes pulls image
+</div>
+</section>
+
+<!-- 7 -->
+<section>
+<h2>7. Deployment (Production Way)</h2>
+
+<code>
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi-container
+          image: yourusername/myfastapi:v1
+          ports:
+            - containerPort: 8000
+</code>
+
+<div class="flow">
+Deployment → creates & manages multiple Pods automatically
+</div>
+</section>
+
+<!-- 8 -->
+<section>
+<h2>8. Final Architecture Summary</h2>
+
+<div class="diagram">
+  <div class="box">Internet</div>
+  <div class="arrow">↓</div>
+  <div class="box">Ingress Controller</div>
+  <div class="arrow">↓</div>
+  <div class="box">Service</div>
+  <div class="arrow">↓</div>
+  <div class="box">Deployment</div>
+  <div class="arrow">↓</div>
+  <div class="box">Pods (FastAPI)</div>
+  <div class="arrow">↓</div>
+  <div class="box">Docker Image (Registry)</div>
+</div>
+</section>
+
+</body>
+</html>
