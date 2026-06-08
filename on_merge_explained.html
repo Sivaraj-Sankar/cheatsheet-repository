@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>on_merge.yml — CI/CD Pipeline Explained (Sanitized)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f6ff;
+      color: #1a2a3a;
+      line-height: 1.7;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 3px solid #4a90d9;
+      padding: 32px 48px;
+    }
+    header h1 {
+      font-size: 1.9rem;
+      color: #1e4a7a;
+      font-weight: 700;
+    }
+    header p {
+      color: #5a7a9a;
+      margin-top: 6px;
+      font-size: 0.97rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 24px;
+    }
+
+    /* ── Section headings ── */
+    h2 {
+      font-size: 1.25rem;
+      color: #1e4a7a;
+      border-left: 4px solid #4a90d9;
+      padding-left: 12px;
+      margin: 40px 0 18px;
+    }
+    h3 {
+      font-size: 1.05rem;
+      color: #2a5a8a;
+      margin: 22px 0 10px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #ffffff;
+      border: 1px solid #cce0f5;
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(74,144,217,0.07);
+    }
+    .card p, .card li { font-size: 0.95rem; color: #2c3e50; }
+    .card ul { padding-left: 20px; margin-top: 8px; }
+    .card ul li { margin-bottom: 5px; }
+
+    /* ── Flow diagram ── */
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0;
+      margin: 10px 0 24px;
+    }
+    .flow-box {
+      background: #e8f2fc;
+      border: 2px solid #4a90d9;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #1e4a7a;
+      text-align: center;
+      min-width: 130px;
+    }
+    .flow-arrow {
+      font-size: 1.4rem;
+      color: #4a90d9;
+      padding: 0 8px;
+      line-height: 1;
+    }
+    .flow-box.green  { background: #e6f7ef; border-color: #27ae60; color: #1a5e35; }
+    .flow-box.orange { background: #fff4e6; border-color: #e67e22; color: #7a3a00; }
+    .flow-box.red    { background: #fdecea; border-color: #c0392b; color: #6b1a14; }
+
+    /* ── Job blocks ── */
+    .job-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .job-card {
+      background: #ffffff;
+      border-top: 4px solid;
+      border-radius: 8px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 8px rgba(74,144,217,0.08);
+    }
+    .job-card.blue  { border-color: #4a90d9; }
+    .job-card.teal  { border-color: #1abc9c; }
+    .job-card.gold  { border-color: #f1c40f; }
+    .job-card.green { border-color: #27ae60; }
+    .job-card h3 { margin-top: 0; }
+    .job-card .badge {
+      display: inline-block;
+      font-size: 0.73rem;
+      padding: 2px 9px;
+      border-radius: 20px;
+      background: #e8f2fc;
+      color: #1e4a7a;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .job-card ul { padding-left: 18px; margin-top: 8px; }
+    .job-card ul li { font-size: 0.88rem; color: #3a5068; margin-bottom: 4px; }
+
+    /* ── Code block ── */
+    pre {
+      background: #1a2a3a;
+      color: #c9e4ff;
+      border-radius: 8px;
+      padding: 18px 22px;
+      font-size: 0.83rem;
+      overflow-x: auto;
+      margin: 14px 0;
+    }
+    code { font-family: 'Cascadia Code', 'Fira Code', monospace; }
+    .hl-key   { color: #79c0ff; }
+    .hl-val   { color: #a5d6ff; }
+    .hl-str   { color: #a5d6ff; }
+    .hl-cmt   { color: #6e8a9a; font-style: italic; }
+
+    /* ── Step list ── */
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      background: #4a90d9;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .steps li .step-body { flex: 1; }
+    .steps li .step-body strong { color: #1e4a7a; }
+    .steps li .step-body p { font-size: 0.93rem; color: #3a4a5a; }
+
+    /* ── Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 12px;
+    }
+    th {
+      background: #4a90d9;
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #d0e6f8;
+      color: #2c3e50;
+    }
+    tr:nth-child(even) td { background: #f4f9ff; }
+
+    /* ── Info callout ── */
+    .callout {
+      border-left: 4px solid #4a90d9;
+      background: #eaf3fc;
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.93rem;
+      color: #1e4a7a;
+    }
+    .callout.warn {
+      border-color: #e67e22;
+      background: #fff8ef;
+      color: #7a3a00;
+    }
+    .callout.ok {
+      border-color: #27ae60;
+      background: #edfaf3;
+      color: #1a5e35;
+    }
+
+    footer {
+      text-align: center;
+      padding: 28px;
+      color: #8aaac0;
+      font-size: 0.83rem;
+      border-top: 1px solid #cce0f5;
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>on_merge.yml — CI/CD Pipeline Deep Dive</h1>
+  <p>
+    Workflow: <code>&lt;your-api-name&gt;</code> &nbsp;|&nbsp;
+    Repo: <code>&lt;your-org&gt;</code> &nbsp;|&nbsp;
+    File: <code>.github/workflows/on_merge.yml</code>
+  </p>
+</header>
+
+<div class="container">
+
+  <!-- ════════════════════════════════════════
+       SECTION 1 — WHAT TRIGGERS THIS WORKFLOW
+       ════════════════════════════════════════ -->
+  <h2>1. What Triggers This Workflow?</h2>
+
+  <div class="card">
+    <p>The workflow fires under <strong>two conditions</strong>:</p>
+    <ul>
+      <li>
+        <strong>Pull Request Merged to <code>main</code></strong> — whenever a PR is
+        <em>closed</em> and the flag <code>github.event.pull_request.merged == true</code> is set.
+        Simply closing a PR without merging does <strong>not</strong> trigger a build.
+      </li>
+      <li>
+        <strong>Manual trigger (<code>workflow_dispatch</code>)</strong> — any team member can
+        press <em>Run workflow</em> in the GitHub Actions UI to kick it off without a PR.
+      </li>
+    </ul>
+    <pre><code><span class="hl-key">on:</span>
+  <span class="hl-key">pull_request:</span>
+    <span class="hl-key">types:</span>
+      <span class="hl-str">- closed</span>          <span class="hl-cmt"># only when PR is closed…</span>
+    <span class="hl-key">branches:</span>
+      <span class="hl-str">- main</span>            <span class="hl-cmt"># …against the main branch</span>
+  <span class="hl-key">workflow_dispatch:</span>  <span class="hl-cmt"># manual run via GitHub UI</span></code></pre>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 2 — ENVIRONMENT VARIABLES
+       ════════════════════════════════════════ -->
+  <h2>2. Global Environment Variables</h2>
+
+  <div class="card">
+    <p>
+      Two env vars are set at the top level so every job can access them.
+      They are used to authenticate with the company's internal <strong>&lt;artifact-registry&gt;</strong>
+      (e.g. Artifactory / Nexus) when pulling private Python packages during the Docker build.
+    </p>
+    <table>
+      <tr>
+        <th>Variable</th>
+        <th>Source</th>
+        <th>Purpose</th>
+      </tr>
+      <tr>
+        <td><code>UV_INDEX_&lt;REGISTRY&gt;_USERNAME</code></td>
+        <td>GitHub Repository Variable (<code>vars.*</code>)</td>
+        <td>Username for the private PyPI proxy</td>
+      </tr>
+      <tr>
+        <td><code>UV_INDEX_&lt;REGISTRY&gt;_PASSWORD</code></td>
+        <td>GitHub Secret (<code>secrets.*</code>)</td>
+        <td>Token/password — encrypted, never logged</td>
+      </tr>
+    </table>
+    <div class="callout">
+      <strong>uv</strong> is a fast Python package manager. The <code>UV_INDEX_*</code> prefix
+      tells it to authenticate against the private registry so it can download internal
+      company Python packages during <code>docker build</code>.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 3 — HIGH-LEVEL FLOW
+       ════════════════════════════════════════ -->
+  <h2>3. High-Level Pipeline Flow</h2>
+
+  <div class="flow">
+    <div class="flow-box">PR merged<br/>to <code>main</code></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box blue">build-publish<br/>(Docker image)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box teal" style="background:#e6f7f4;border-color:#1abc9c;color:#0e5940;">flyway<br/>DEV migration</div>
+    <div class="flow-arrow">+</div>
+    <div class="flow-box gold" style="background:#fef9e0;border-color:#d4ac0d;color:#7a5500;">flyway<br/>PROD migration</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box green">dev-deploy<br/>to Kubernetes</div>
+  </div>
+
+  <div class="callout ok">
+    The two Flyway jobs run <strong>in parallel</strong> after <code>build-publish</code>.
+    The final <code>dev-deploy</code> waits for all three preceding jobs to complete.
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 4 — JOB DETAILS
+       ════════════════════════════════════════ -->
+  <h2>4. Job-by-Job Breakdown</h2>
+
+  <div class="job-grid">
+
+    <div class="job-card blue">
+      <h3>build-publish</h3>
+      <span class="badge">Runner: &lt;self-hosted-runner&gt;</span>
+      <ul>
+        <li>Checkout full git history</li>
+        <li>Fetch GitHub App credentials from HashiCorp Vault</li>
+        <li>Generate short SHA image tag (e.g. <code>a1b2c3d</code>)</li>
+        <li>Build Docker image &amp; push to &lt;company&gt; registry</li>
+        <li>Exports <code>imageTag</code> output for later jobs</li>
+      </ul>
+    </div>
+
+    <div class="job-card teal">
+      <h3>flyway-migration-dev</h3>
+      <span class="badge">Needs: build-publish</span>
+      <ul>
+        <li>Runs the shared Flyway workflow</li>
+        <li>Targets the <strong>dev</strong> database</li>
+        <li>DB name: <code>&lt;your-db-name&gt;</code></li>
+        <li>Seeds test data (<code>SEED_DATA: true</code>)</li>
+        <li>Applies all pending SQL migrations</li>
+      </ul>
+    </div>
+
+    <div class="job-card gold">
+      <h3>flyway-migration-prod</h3>
+      <span class="badge">Needs: build-publish</span>
+      <ul>
+        <li>Calls the same shared Flyway workflow</li>
+        <li>Targets the <strong>prod</strong> database</li>
+        <li><code>FLYWAY_MIGRATION_ENABLED: false</code></li>
+        <li>Migration is currently <strong>disabled</strong> — runs dry / no-op</li>
+        <li>Prod migrations are applied manually or separately</li>
+      </ul>
+    </div>
+
+    <div class="job-card green">
+      <h3>dev-deploy</h3>
+      <span class="badge">Needs: all 3 above</span>
+      <ul>
+        <li>Waits for build + both Flyway jobs</li>
+        <li>Calls <code>deploy-dispatcher</code> action</li>
+        <li>App: <code>&lt;your-app-short-name&gt;</code>, Team: <code>&lt;your-team-name&gt;</code></li>
+        <li>Patches image tag in GitOps repo</li>
+        <li>Kubernetes picks up the change and rolls out</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 5 — BUILD-PUBLISH STEP-BY-STEP
+       ════════════════════════════════════════ -->
+  <h2>5. build-publish — Step-by-Step</h2>
+
+  <ul class="steps">
+    <li>
+      <div class="step-body">
+        <strong>Checkout</strong>
+        <p>
+          Uses <code>actions/checkout@v3</code> with <code>fetch-depth: 0</code> to pull the
+          <em>complete</em> git history (not just the latest commit). This is needed so that
+          tools like <code>git rev-parse</code> can see all commits.
+        </p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Get GitHub App ID from HashiCorp Vault</strong>
+        <p>
+          Uses the company's custom action <code>&lt;org&gt;/action-sre-vault-retrieve-secret</code> to fetch
+          the GitHub App ID from <strong>Vault</strong> at
+          <code>&lt;vault-secret-path&gt;/gh-app-action-workflow-rw</code>.
+          This is the GitHub App used to authenticate with GitHub APIs.
+        </p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Get GitHub App PEM Key from Vault</strong>
+        <p>
+          Same Vault path, different field — fetches the base64-encoded private key of the
+          GitHub App. This key is used in the next step to generate a short-lived installation
+          token.
+        </p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Generate GitHub App Token</strong>
+        <p>
+          Uses <code>philips-software/app-token-action</code> to exchange the App ID + PEM key
+          for an <strong>installation token</strong>. This token grants the workflow permission to
+          interact with repos in the <code>&lt;your-github-org&gt;</code> org (e.g. push image metadata,
+          update deployment repos).
+        </p>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Set Short SHA Tag</strong>
+        <p>
+          Runs <code>git rev-parse --short HEAD</code> to get a 7-character commit hash
+          (e.g. <code>a1b2c3d</code>). This becomes the Docker image tag and is exported
+          as <code>steps.version-sha.outputs.sha_short</code> for downstream jobs.
+        </p>
+        <pre><code>echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT</code></pre>
+      </div>
+    </li>
+    <li>
+      <div class="step-body">
+        <strong>Build &amp; Push Docker Image</strong>
+        <p>
+          Uses the company's internal action <code>&lt;org&gt;/sre.actions.docker-build-push@v1.x.x</code> to:
+        </p>
+        <ul style="margin-top:6px;padding-left:20px;">
+          <li>Build the Docker image from the repo's <code>Dockerfile</code></li>
+          <li>Pass registry credentials as <code>--build-arg</code> so <code>uv</code>
+              can install private Python packages inside the image</li>
+          <li>Tag the image as <code>&lt;your-api-name&gt;:&lt;sha_short&gt;</code></li>
+          <li>Push to the company's internal container registry (Artifactory / ECR)</li>
+        </ul>
+      </div>
+    </li>
+  </ul>
+
+  <!-- ════════════════════════════════════════
+       SECTION 6 — WHERE DOES THE IMAGE GO?
+       ════════════════════════════════════════ -->
+  <h2>6. Where Does the Docker Image Go?</h2>
+
+  <div class="card">
+    <p>
+      The image is built and pushed by the custom action
+      <code>&lt;org&gt;/sre.actions.docker-build-push@v1.x.x</code>.
+      Based on the repository name and company infrastructure patterns, it is pushed to
+      the company's internal <strong>container registry</strong>
+      (Artifactory and/or mirrored to <strong>AWS ECR</strong>). The image is tagged with the short Git SHA:
+    </p>
+    <pre><code><span class="hl-cmt"># Conceptual image reference</span>
+<span class="hl-str">&lt;registry-url&gt;/&lt;your-api-name&gt;:a1b2c3d</span></code></pre>
+    <div class="callout">
+      The exact registry URL is abstracted inside the
+      <code>sre.actions.docker-build-push</code> action maintained by the
+      <strong>&lt;company&gt; SRE team</strong>. The image name is set to
+      <code>&lt;your-api-name&gt;</code> and the version is the short SHA.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 7 — FLYWAY DB MIGRATIONS
+       ════════════════════════════════════════ -->
+  <h2>7. Flyway Database Migrations</h2>
+
+  <div class="card">
+    <p>
+      <strong>Flyway</strong> is a database migration tool that applies versioned SQL scripts
+      (e.g. <code>V1__create_tables.sql</code>) to keep the schema in sync with the application code.
+    </p>
+    <table>
+      <tr>
+        <th>Setting</th>
+        <th>Dev</th>
+        <th>Prod</th>
+      </tr>
+      <tr>
+        <td>Environment</td>
+        <td><code>dev</code></td>
+        <td><code>prod</code></td>
+      </tr>
+      <tr>
+        <td>DB Name</td>
+        <td><code>&lt;your-db-name&gt;</code></td>
+        <td><code>&lt;your-db-name&gt;</code></td>
+      </tr>
+      <tr>
+        <td>Secret Prefix</td>
+        <td><code>&lt;your-secret-prefix&gt;</code></td>
+        <td><code>&lt;your-secret-prefix&gt;</code></td>
+      </tr>
+      <tr>
+        <td>Seed Data</td>
+        <td>Yes (<code>true</code>)</td>
+        <td>No (not set)</td>
+      </tr>
+      <tr>
+        <td>Migration Enabled</td>
+        <td>Yes (default)</td>
+        <td><strong>No</strong> (<code>false</code>)</td>
+      </tr>
+    </table>
+    <div class="callout warn">
+      <strong>Prod migrations are disabled.</strong> Setting
+      <code>FLYWAY_MIGRATION_ENABLED: false</code> means the prod job runs but does
+      not apply any SQL changes. Prod schema changes are handled separately
+      (likely via a dedicated, manually-approved workflow).
+    </div>
+    <p style="margin-top:12px;">
+      Both Flyway jobs reuse a shared, org-level workflow from
+      <code>&lt;your-org&gt;/&lt;shared-workflows-repo&gt;/.github/workflows/flyway.yml@main</code>.
+      DB credentials are pulled from <strong>AWS Secrets Manager</strong> using the
+      prefix <code>&lt;your-secret-prefix&gt;</code>.
+    </p>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 8 — DEPLOYMENT (KUBERNETES)
+       ════════════════════════════════════════ -->
+  <h2>8. Deployment — How Does It Reach Kubernetes?</h2>
+
+  <div class="card">
+    <p>
+      The <code>dev-deploy</code> job uses the action
+      <code>&lt;org&gt;/sre.actions.deploy-dispatcher@v2.x.x</code>. This is a
+      <strong>GitOps-based</strong> deployment action. Here's what happens internally:
+    </p>
+
+    <ul class="steps" style="margin-top:14px;">
+      <li>
+        <div class="step-body">
+          <strong>dispatch-dispatcher finds the GitOps repo</strong>
+          <p>
+            It locates the Kubernetes deployment configuration repository for the
+            <code>&lt;your-team-name&gt;</code> team and the <code>&lt;your-app-short-name&gt;</code> application.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Patches the image tag in the config file</strong>
+          <p>
+            It updates the value at the YAML path
+            <code>.&lt;company&gt;-deployment.image.tag</code> in the deployment config
+            (e.g. a <code>values.yaml</code> or <code>.&lt;company&gt;-deployment.yaml</code>) to
+            the new short SHA.
+          </p>
+          <pre><code><span class="hl-cmt"># Before</span>
+<span class="hl-key">&lt;company&gt;-deployment:</span>
+  <span class="hl-key">image:</span>
+    <span class="hl-key">tag:</span> <span class="hl-str">abc1234</span>
+
+<span class="hl-cmt"># After (patched by the action)</span>
+<span class="hl-key">&lt;company&gt;-deployment:</span>
+  <span class="hl-key">image:</span>
+    <span class="hl-key">tag:</span> <span class="hl-str">a1b2c3d</span>  <span class="hl-cmt">← new SHA from this build</span></code></pre>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>Commits &amp; pushes the change</strong>
+          <p>
+            The action commits this tag bump to the GitOps repo using the GitHub App token.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div class="step-body">
+          <strong>ArgoCD / Flux detects the change</strong>
+          <p>
+            The company uses a GitOps controller (likely <strong>ArgoCD</strong>) watching the
+            GitOps repo. It detects the new commit, pulls the updated image tag, and
+            instructs Kubernetes to perform a rolling deployment of the new image.
+          </p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="callout ok">
+      <strong>Result:</strong> The new Docker image
+      <code>&lt;your-api-name&gt;:&lt;sha&gt;</code> is rolled out to the
+      <strong>dev Kubernetes cluster</strong> with zero manual steps.
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 9 — DEPENDENCY GRAPH
+       ════════════════════════════════════════ -->
+  <h2>9. Job Dependency Graph</h2>
+
+  <div class="card">
+    <pre><code>
+  ┌─────────────────────────────────────────────────────┐
+  │              Trigger: PR merged → main              │
+  └────────────────────────┬────────────────────────────┘
+                           │
+                           ▼
+              ┌─────────────────────┐
+              │   build-publish     │  ← Build Docker image
+              │   (&lt;self-hosted-runner&gt;)  │    Push to registry
+              └──────┬──────────────┘
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+          ▼                     ▼
+  ┌──────────────┐     ┌──────────────────┐
+  │  flyway-dev  │     │  flyway-prod     │
+  │  (run SQL)   │     │  (disabled/noop) │
+  └──────┬───────┘     └────────┬─────────┘
+          │                     │
+          └──────────┬──────────┘
+                     │  (both must pass)
+                     ▼
+           ┌──────────────────┐
+           │   dev-deploy     │  ← Update GitOps repo
+           │ (&lt;self-hosted&gt;)  │    ArgoCD → K8s rollout
+           └──────────────────┘
+    </code></pre>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       SECTION 10 — KEY ACTIONS REFERENCE
+       ════════════════════════════════════════ -->
+  <h2>10. Key Actions Reference</h2>
+
+  <table>
+    <tr>
+      <th>Action</th>
+      <th>What It Does</th>
+    </tr>
+    <tr>
+      <td><code>actions/checkout@v3</code></td>
+      <td>Standard GitHub action to clone the repository</td>
+    </tr>
+    <tr>
+      <td><code>&lt;org&gt;/action-sre-vault-retrieve-secret@v1.x.x</code></td>
+      <td>Fetches secrets from HashiCorp Vault (company internal)</td>
+    </tr>
+    <tr>
+      <td><code>philips-software/app-token-action@v2.0.0</code></td>
+      <td>Exchanges GitHub App credentials for a short-lived installation token</td>
+    </tr>
+    <tr>
+      <td><code>&lt;org&gt;/sre.actions.docker-build-push@v1.x.x</code></td>
+      <td>Builds Dockerfile and pushes image to company container registry</td>
+    </tr>
+    <tr>
+      <td><code>&lt;shared-workflows-repo&gt;/flyway.yml@main</code></td>
+      <td>Shared reusable workflow: runs Flyway SQL migrations against a target DB</td>
+    </tr>
+    <tr>
+      <td><code>&lt;org&gt;/sre.actions.deploy-dispatcher@v2.x.x</code></td>
+      <td>GitOps deployer — patches image tag in config repo, triggers K8s rollout</td>
+    </tr>
+  </table>
+
+  <!-- ════════════════════════════════════════
+       SECTION 11 — QUICK SUMMARY
+       ════════════════════════════════════════ -->
+  <h2>11. Quick Summary</h2>
+
+  <div class="card">
+    <ul>
+      <li><strong>Trigger:</strong> PR merged to <code>main</code> (or manual run)</li>
+      <li><strong>Build:</strong> Docker image built from the repo, tagged with short Git SHA</li>
+      <li><strong>Registry:</strong> Image pushed to &lt;company&gt; Artifactory / ECR</li>
+      <li><strong>DB Migrations:</strong> Flyway applies SQL migrations to <code>dev</code> DB; prod migrations are disabled</li>
+      <li><strong>Deployment:</strong> GitOps image-tag patch → ArgoCD detects → Kubernetes rolling update in <code>dev</code></li>
+      <li><strong>Secrets:</strong> Credentials from HashiCorp Vault + GitHub Secrets + AWS Secrets Manager</li>
+      <li><strong>Runner:</strong> All jobs run on <code>&lt;self-hosted-runner&gt;</code> (company self-hosted runner)</li>
+    </ul>
+  </div>
+
+</div>
+
+<footer>
+  Generated from <code>.github/workflows/on_merge.yml</code> &nbsp;|&nbsp;
+  &lt;your-api-name&gt; &nbsp;|&nbsp; &lt;your-org&gt;
+</footer>
+
+</body>
+</html>
