@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GenAI [I·A·] API — Project Analysis</title>
+  <style>
+    :root {
+      --blue-100: #e8f4fd;
+      --blue-200: #c5e1f8;
+      --blue-300: #93c8f0;
+      --blue-400: #4fa8e8;
+      --blue-500: #1a7fd4;
+      --blue-600: #1262a8;
+      --text-dark: #1a2332;
+      --text-mid:  #3a4a5c;
+      --text-soft: #5a7080;
+      --white:     #ffffff;
+      --bg:        #f5faff;
+      --border:    #d0e8f8;
+      --shadow:    rgba(26,127,212,0.10);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+      line-height: 1.7;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--blue-600) 0%, var(--blue-500) 60%, var(--blue-400) 100%);
+      color: var(--white);
+      padding: 56px 48px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.10) 0%, transparent 60%);
+    }
+    header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.30);
+      border-radius: 20px;
+      padding: 4px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 700;
+      margin-bottom: 12px;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      font-size: 16px;
+      opacity: 0.85;
+      max-width: 640px;
+    }
+
+    /* ── Nav pills ── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    nav a {
+      display: inline-block;
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-soft);
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    nav a:hover { color: var(--blue-500); border-bottom-color: var(--blue-300); }
+
+    /* ── Main ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 32px 80px;
+    }
+
+    /* ── Section ── */
+    section {
+      margin-bottom: 64px;
+      scroll-margin-top: 60px;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--blue-200);
+    }
+    .section-icon {
+      width: 44px; height: 44px;
+      background: var(--blue-100);
+      border: 1.5px solid var(--blue-300);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .section-header h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blue-600);
+      letter-spacing: -0.3px;
+    }
+    .section-header span {
+      font-size: 13px;
+      color: var(--text-soft);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 28px;
+      box-shadow: 0 2px 12px var(--shadow);
+      margin-bottom: 18px;
+    }
+    .card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue-600);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card p, .card li {
+      font-size: 14px;
+      color: var(--text-mid);
+    }
+    .card ul {
+      padding-left: 20px;
+      margin-top: 6px;
+    }
+    .card ul li { margin-bottom: 6px; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+    @media(max-width:768px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      header, nav { padding-left: 20px; padding-right: 20px; }
+      main { padding: 28px 16px 60px; }
+    }
+
+    /* ── Highlight box ── */
+    .highlight {
+      background: var(--blue-100);
+      border-left: 4px solid var(--blue-400);
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+      margin: 12px 0;
+      font-size: 14px;
+      color: var(--text-mid);
+    }
+    .highlight strong { color: var(--blue-600); }
+
+    /* ── Stat row ── */
+    .stat-row { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 24px; }
+    .stat-box {
+      flex: 1; min-width: 160px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--blue-400);
+      border-radius: 12px;
+      padding: 18px 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    .stat-box .val {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--blue-500);
+      line-height: 1.1;
+    }
+    .stat-box .lbl {
+      font-size: 12px;
+      color: var(--text-soft);
+      margin-top: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    /* ── Tag ── */
+    .tag {
+      display: inline-block;
+      background: var(--blue-100);
+      color: var(--blue-600);
+      border: 1px solid var(--blue-200);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 3px 2px;
+    }
+
+    /* ── ROI Table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    thead tr { background: var(--blue-500); color: var(--white); }
+    thead th { padding: 12px 16px; text-align: left; font-weight: 600; }
+    tbody tr { background: var(--white); border-bottom: 1px solid var(--border); }
+    tbody tr:nth-child(even) { background: var(--blue-100); }
+    tbody td { padding: 11px 16px; color: var(--text-mid); }
+    .pos { color: #1a8a4a; font-weight: 700; }
+    .neg { color: #c0392b; font-weight: 700; }
+
+    /* ── Pipeline diagram ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .pipe-step {
+      background: var(--blue-100);
+      border: 1.5px solid var(--blue-300);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--blue-600);
+      text-align: center;
+      flex: 1;
+      min-width: 100px;
+    }
+    .pipe-arrow {
+      color: var(--blue-400);
+      font-size: 20px;
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+
+    /* ── Challenge card accent ── */
+    .challenge-problem { border-left: 4px solid #e85d5d; }
+    .challenge-scale   { border-left: 4px solid #e8a020; }
+    .challenge-agent   { border-left: 4px solid #1a7fd4; }
+
+    .badge-problem { background: #fef2f2; color: #c0392b; border-color: #f5c6c6; }
+    .badge-scale   { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+    .badge-agent   { background: var(--blue-100); color: var(--blue-600); border-color: var(--blue-200); }
+
+    footer {
+      text-align: center;
+      padding: 28px;
+      font-size: 12px;
+      color: var(--text-soft);
+      border-top: 1px solid var(--border);
+      background: var(--white);
+    }
+
+    /* ── Masked names ── */
+    .masked {
+      display: inline-block;
+      background: #1e2d3d;
+      color: #1e2d3d;
+      border-radius: 4px;
+      padding: 0 3px;
+      cursor: help;
+      position: relative;
+      font-style: normal;
+      user-select: none;
+      transition: background 0.2s, color 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .masked:hover {
+      background: var(--blue-100);
+      color: var(--blue-600);
+    }
+    .masked::after {
+      content: attr(data-hint);
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--blue-600);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .masked:hover::after { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header>
+  <div class="badge"><span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span> GenAI Platform</div>
+  <h1>GenAI <span class="masked" data-hint="Hint: AI-powered document analysis flagship product · I·····t A·····t">I·····t A·····t</span> API<br>— Project Deep Dive</h1>
+  <p>Problem Statement · ROI Analysis · Challenges · Scalability · Agentic Architecture</p>
+</header>
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#problem">Problem Statement</a>
+  <a href="#roi">ROI Analysis</a>
+  <a href="#challenges-problem">Problem Challenges</a>
+  <a href="#challenges-scale">Scalability Challenges</a>
+  <a href="#challenges-agent">Agentic Challenges</a>
+  <a href="#stack">Tech Stack</a>
+</nav>
+
+<main>
+
+  <!-- ════════════════ OVERVIEW ════════════════ -->
+  <section id="overview">
+    <div class="section-header">
+      <div class="section-icon">🔭</div>
+      <div>
+        <h2>Executive Overview</h2>
+        <span>What is this project?</span>
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-box"><div class="val">16+</div><div class="lbl">Specialized Agents</div></div>
+      <div class="stat-box"><div class="val">6</div><div class="lbl">Workflow Types</div></div>
+      <div class="stat-box"><div class="val">3</div><div class="lbl">RAG Variants</div></div>
+      <div class="stat-box"><div class="val">2</div><div class="lbl">Streaming Protocols</div></div>
+      <div class="stat-box"><div class="val">AWS</div><div class="lbl">Bedrock Backed</div></div>
+    </div>
+
+    <div class="card">
+      <h3>📋 What is the GenAI <span class="masked" data-hint="Hint: AI-powered document analysis flagship product · I·····t A·····t">I·····t A·····t</span> API?</h3>
+      <p>The GenAI <span class="masked" data-hint="Hint: AI-powered document analysis flagship product · I·····t A·····t">I·····t A·····t</span> API is an <strong>enterprise-grade, multi-agent AI platform</strong> built for <span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span> — a leading energy data and analytics company. It delivers real-time, AI-powered document analysis, market intelligence, and decision support across <span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span>'s product suite.</p>
+      <br>
+      <p>Built on <strong>Python, FastAPI, LangGraph, LangChain, and AWS Bedrock</strong>, it orchestrates over 16 specialized AI agents to decompose complex queries, retrieve relevant knowledge, synthesize multi-source answers, and stream results back to users with full citation traceability.</p>
+      <br>
+      <div class="highlight">
+        <strong>Core Products Powered:</strong>
+        <span class="masked" data-hint="Hint: AI-powered document analysis flagship product · I·····t A·····t™">I·····t A·····t™</span> ·
+        <span class="masked" data-hint="Hint: HR policy guidance AI assistant product · HR G·····l A·········t">HR G·····l A·········t</span> ·
+        <span class="masked" data-hint="Hint: Investment opportunity screening product · D··l S·······r">D··l S·······r</span> ·
+        <span class="masked" data-hint="Hint: Multi-format content analysis product (images, tables, charts) · M··········l A·······s">M··········l A·······s</span> ·
+        <span class="masked" data-hint="Hint: Legal filings &amp; courthouse records intelligence product · C··········e I···········e">C··········e I···········e</span>
+      </div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipe-step">User Query</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Query Decomposer Agent</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Metadata + Entity Extraction</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">RAG Retrieval (3 variants)</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Response + Citation Agent</div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">Streamed Answer</div>
+    </div>
+  </section>
+
+  <!-- ════════════════ PROBLEM STATEMENT ════════════════ -->
+  <section id="problem">
+    <div class="section-header">
+      <div class="section-icon">🎯</div>
+      <div>
+        <h2>Problem Statement</h2>
+        <span>What problem is being solved?</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🕒 Time-Intensive Manual Analysis</h3>
+        <p>Energy sector professionals spend hours manually researching regulatory filings, market reports, M&A documents, HR policies, and deal data. Insights are delayed, costly, and inconsistent across analysts.</p>
+      </div>
+      <div class="card">
+        <h3>🗃️ Multi-Source Knowledge Silos</h3>
+        <p>Critical information is scattered across AWS Bedrock Knowledge Bases, OpenSearch indices, Kendra, and external web sources — no unified interface to query all sources simultaneously.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Decision Support at Scale</h3>
+        <p>Deal screeners, compliance teams, and analysts need near-instant AI-assisted insights but existing systems lack the query decomposition and context reasoning to handle complex, multi-part questions.</p>
+      </div>
+      <div class="card">
+        <h3>📝 Lack of Traceable Citations</h3>
+        <p>AI responses without source attribution are unusable in regulated industries. Users need answers backed by exact page, section, and paragraph citations from authoritative documents.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>💡 The Core Solution</h3>
+      <p>A <strong>hierarchical multi-agent AI platform</strong> that:</p>
+      <ul>
+        <li>Decomposes complex queries into sub-tasks handled by specialized agents</li>
+        <li>Performs hybrid semantic + metadata-filtered retrieval across knowledge bases</li>
+        <li>Synthesizes multi-source answers with paragraph-level citations</li>
+        <li>Delivers results via real-time streaming (WebSocket + SSE) for perceived instant response</li>
+        <li>Supports configurable workflows per <span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span> product and enterprise tier</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ════════════════ ROI ANALYSIS ════════════════ -->
+  <section id="roi">
+    <div class="section-header">
+      <div class="section-icon">💰</div>
+      <div>
+        <h2>ROI Analysis</h2>
+        <span>How does this project create and protect value?</span>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <strong>ROI Framework:</strong> The project generates ROI through three levers — <strong>analyst time savings</strong>, <strong>LLM cost optimization</strong>, and <strong>product monetization</strong> via premium feature gating.
+    </div>
+
+    <br>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ROI Lever</th>
+          <th>Mechanism in Code</th>
+          <th>Impact</th>
+          <th>Direction</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Token Cost Tracking</strong></td>
+          <td><code>TokenUsageModel</code> tracks input/output tokens per agent</td>
+          <td>Identifies expensive agents to optimize LLM API spend</td>
+          <td class="neg">Cost ↓</td>
+        </tr>
+        <tr>
+          <td><strong>Document Caching</strong></td>
+          <td><code>response_augmentation/caching/</code> caches vector store results</td>
+          <td>Reduces redundant AWS Bedrock KB calls — major cost driver</td>
+          <td class="neg">Cost ↓</td>
+        </tr>
+        <tr>
+          <td><strong>Fallback Retrieval (3-tier)</strong></td>
+          <td>Progressive filter relaxation strategy</td>
+          <td>Reduces failed queries → fewer retries, lower support burden</td>
+          <td class="pos">Value ↑</td>
+        </tr>
+        <tr>
+          <td><strong>Feature Toggles / Gating</strong></td>
+          <td><code>Feature Toggles API</code> — premium features per tier</td>
+          <td>Charts, web search, extended thinking gated — enables upsell</td>
+          <td class="pos">Revenue ↑</td>
+        </tr>
+        <tr>
+          <td><strong>Lazy LLM Initialization</strong></td>
+          <td>Models initialized on-demand, stronger model only on fallback</td>
+          <td>Avoids using expensive models for simple queries</td>
+          <td class="neg">Cost ↓</td>
+        </tr>
+        <tr>
+          <td><strong>Extended Thinking Control</strong></td>
+          <td>Toggleable extended thinking per workflow</td>
+          <td>Complex queries get deeper reasoning; simple ones don't pay premium</td>
+          <td class="neg">Cost ↓</td>
+        </tr>
+        <tr>
+          <td><strong>Quota Management</strong></td>
+          <td><code>quotas_check.py</code> enforces per-user/product limits</td>
+          <td>Prevents runaway cost from abuse or misconfiguration</td>
+          <td class="neg">Cost ↓</td>
+        </tr>
+        <tr>
+          <td><strong>Analyst Time Displacement</strong></td>
+          <td>Instant multi-source synthesis vs. hours of manual research</td>
+          <td>1 analyst query vs. ~4–8 hrs manual work across docs</td>
+          <td class="pos">Productivity ↑</td>
+        </tr>
+        <tr>
+          <td><strong>Cross-Account AWS Profiles</strong></td>
+          <td>Inference profiles across accounts</td>
+          <td>Cost optimization via account-level pricing tiers</td>
+          <td class="neg">Cost ↓</td>
+        </tr>
+        <tr>
+          <td><strong>Reranking Optimization</strong></td>
+          <td>Configurable reranking modes (MAX, MIN)</td>
+          <td>Improves result quality without proportional cost increase</td>
+          <td class="pos">Quality ↑</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <br>
+    <div class="grid-2">
+      <div class="card">
+        <h3>📈 Business Value Generated</h3>
+        <ul>
+          <li>Reduces analyst research time from hours to seconds</li>
+          <li>Enables self-service intelligence for non-technical users</li>
+          <li>Drives <span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span> product differentiation vs. competitors</li>
+          <li>Supports premium tier upsell (charts, extended thinking, web search)</li>
+          <li>Reduces customer support load via accurate, cited AI answers</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>🛡️ Cost Protection Mechanisms</h3>
+        <ul>
+          <li>Token usage tracked at agent level — pinpoints cost hotspots</li>
+          <li>Bedrock latency monitoring (300s+ observed) → optimization targets</li>
+          <li>Caching layer prevents repeat identical KB queries</li>
+          <li>Quota enforcement prevents per-user cost overruns</li>
+          <li>Weaker/cheaper models used for simple steps; stronger only on failure</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ PROBLEM CHALLENGES ════════════════ -->
+  <section id="challenges-problem">
+    <div class="section-header">
+      <div class="section-icon">⚠️</div>
+      <div>
+        <h2>Problem-Solving Challenges</h2>
+        <span>Core technical and business problems that had to be solved</span>
+      </div>
+    </div>
+
+    <div class="card challenge-problem">
+      <h3><span class="tag badge-problem">Problem</span> Query Complexity &amp; Decomposition</h3>
+      <p>Real-world analyst queries are compound, ambiguous, and multi-intent. A single question like <em>"What is the production profile and regulatory outlook for Operator X in the Permian?"</em> requires multiple independent sub-queries across different knowledge domains.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Query Decomposer Agent breaks queries into sub-tasks. Each sub-task routes to a specialized agent (metadata extraction, categorical RAG, aggregative RAG). Results are synthesized by the Response Agent into a single coherent answer.
+      </div>
+    </div>
+
+    <div class="card challenge-problem">
+      <h3><span class="tag badge-problem">Problem</span> Multi-Source Knowledge Retrieval</h3>
+      <p>Answers must be grounded in authoritative sources — AWS Bedrock Knowledge Bases, OpenSearch indices, Kendra, and external web. No single retriever covers all sources. Incorrect source selection leads to hallucinated or irrelevant answers.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Three RAG variants — <strong>Categorical</strong> (category-filtered), <strong>Aggregative</strong> (cross-source merging), and <strong><span class="masked" data-hint="Hint: Legal filings &amp; courthouse records domain · C··········e">C··········e</span></strong> (domain-specific filings). A fallback 3-tier retrieval ensures results even when strict filters yield nothing.
+      </div>
+    </div>
+
+    <div class="card challenge-problem">
+      <h3><span class="tag badge-problem">Problem</span> Citation Accuracy in Regulated Industries</h3>
+      <p>Energy sector and deal-making require legally defensible answers. Generic LLM responses without source attribution are unusable. Users need citations at the page, section, and paragraph level.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> A structured citation model is embedded in <code>chat_response.py</code>. The RAG pipeline preserves document metadata (page, section, paragraph) through retrieval → reranking → response generation. Every claim in the answer is traceable.
+      </div>
+    </div>
+
+    <div class="card challenge-problem">
+      <h3><span class="tag badge-problem">Problem</span> Latency vs. Quality Trade-off</h3>
+      <p>AWS Bedrock Knowledge Base retrieval shows 45–300+ second latencies in production. Extended thinking (chain-of-thought) dramatically improves answer quality but multiplies cost and latency.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Streaming APIs (WebSocket + SSE) give users immediate partial responses, masking latency. Extended thinking is feature-toggled per workflow. Bedrock latency is instrumented with AWS Request IDs via OpenTelemetry for continuous optimization.
+      </div>
+    </div>
+
+    <div class="card challenge-problem">
+      <h3><span class="tag badge-problem">Problem</span> Entity Resolution at Domain Scale</h3>
+      <p>Energy domain queries reference companies by ticker symbols, legal names, abbreviated names, and legacy names. Incorrect entity resolution returns wrong data — a critical failure for deal screening and market intelligence.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <code>EntityRegistry</code> pattern with pluggable loaders. LLM-based extraction + fuzzy matching + DB lookups. Post-processing enriches resolved entities with authoritative metadata before passing to downstream agents.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ SCALABILITY CHALLENGES ════════════════ -->
+  <section id="challenges-scale">
+    <div class="section-header">
+      <div class="section-icon">📡</div>
+      <div>
+        <h2>Scalability Challenges</h2>
+        <span>How the system is designed to grow and stay resilient</span>
+      </div>
+    </div>
+
+    <div class="card challenge-scale">
+      <h3><span class="tag badge-scale">Scalability</span> Stateful Multi-Turn Conversations at Scale</h3>
+      <p>Multi-turn chat requires conversation history to be persisted across API requests and server instances. In-memory state breaks when requests hit different pods or servers restart.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Dual persistence — <strong>PostgreSQL</strong> via LangGraph's Postgres checkpointer stores full workflow state and conversation history. <strong>Redis/MemoryDB</strong> provides fast in-memory caching for active sessions. Flyway manages DB schema migrations.
+      </div>
+    </div>
+
+    <div class="card challenge-scale">
+      <h3><span class="tag badge-scale">Scalability</span> Concurrent Streaming Responses</h3>
+      <p>Supporting thousands of simultaneous users streaming long AI-generated responses would block synchronous threads and exhaust connection pools in a traditional architecture.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Fully async Python (async/await throughout). FastAPI handles both WebSocket and SSE streaming natively. <code>AbstractWorkflowIterator</code> yields token chunks as they arrive from the LLM, enabling true streaming with backpressure control.
+      </div>
+    </div>
+
+    <div class="card challenge-scale">
+      <h3><span class="tag badge-scale">Scalability</span> Multi-Tenant Product Configuration</h3>
+      <p><span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span> hosts multiple products (<span class="masked" data-hint="Hint: AI-powered document analysis flagship product · I·····t A·····t">I·····t A·····t</span>, <span class="masked" data-hint="Hint: Investment opportunity screening product · D··l S·······r">D··l S·······r</span>, <span class="masked" data-hint="Hint: Human Resources AI policy assistant · HR A·······t">HR A·······t</span>) on one platform. Each product needs different agents, knowledge bases, feature sets, and models without a separate deployment.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <code>ProductRegistry</code> + <code>WorkflowRegistry</code> pattern. Feature toggles are per-product and per-workflow. Agent configuration supports inheritance and fallback. A single API deployment serves all products through runtime routing.
+      </div>
+    </div>
+
+    <div class="card challenge-scale">
+      <h3><span class="tag badge-scale">Scalability</span> Observability at Production Scale</h3>
+      <p>Diagnosing latency issues, cost spikes, and hallucinations in production requires distributed tracing across agents, models, and knowledge bases — standard logging is insufficient.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Full observability stack — <strong>OpenTelemetry</strong> for distributed tracing, <strong>Prometheus</strong> for metrics, <strong>Grafana + Tempo</strong> for visualization, and <strong>LangSmith</strong> for LLM-specific debugging and evaluation. AWS Request IDs are captured for Bedrock calls.
+      </div>
+    </div>
+
+    <div class="card challenge-scale">
+      <h3><span class="tag badge-scale">Scalability</span> Long-Running Workflow Recovery</h3>
+      <p>Complex agentic workflows (deal screening, iterative research) can run for minutes. If a worker crashes mid-workflow, all partial work is lost and the user must restart from scratch.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> LangGraph checkpoint-based recovery. Each workflow node persists its state to PostgreSQL before advancing. On failure, the workflow resumes from the last checkpoint — transparent to the user.
+      </div>
+    </div>
+
+    <div class="card challenge-scale">
+      <h3><span class="tag badge-scale">Scalability</span> AWS Bedrock Cost at Scale</h3>
+      <p>At enterprise scale, Bedrock API calls (model inference + knowledge base retrieval) become the dominant cost driver. Naive implementations call the API on every request, even for identical queries.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Vector store caching layer in <code>response_augmentation/caching/</code> deduplicates identical KB queries. Token usage tracked per agent via <code>TokenUsageModel</code>. Quota enforcement prevents runaway spend. Cross-account inference profiles optimize pricing.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ AGENTIC CHALLENGES ════════════════ -->
+  <section id="challenges-agent">
+    <div class="section-header">
+      <div class="section-icon">🤖</div>
+      <div>
+        <h2>Agentic Architecture Challenges</h2>
+        <span>Challenges specific to building and orchestrating multi-agent AI systems</span>
+      </div>
+    </div>
+
+    <div class="card challenge-agent">
+      <h3><span class="tag badge-agent">Agentic</span> Hierarchical Agent Orchestration</h3>
+      <p>Coordinating 16+ specialized agents — each with its own LLM, tools, and state — without race conditions, duplicate work, or conflicting results is fundamentally hard. Simple sequential chains can't leverage parallelism.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <strong>LangGraph</strong> as the orchestration backbone. Workflows model agent coordination as typed directed graphs with conditional edges. Linear, conditional, and parallel workflow patterns all supported. <code>AbstractChatbotWorkflow</code> provides a reusable base.
+      </div>
+      <br>
+      <p><strong>Agent Hierarchy:</strong></p>
+      <div class="pipeline" style="margin-top:10px">
+        <div class="pipe-step">Query Agent</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">Metadata + Entity</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">RAG Agents (×3)</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">Reranker</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">Response Agent</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-step">Follow-up Agent</div>
+      </div>
+    </div>
+
+    <div class="card challenge-agent">
+      <h3><span class="tag badge-agent">Agentic</span> Structured Output Reliability</h3>
+      <p>LLMs don't reliably produce valid JSON or schema-compliant outputs on every call — especially for complex nested structures like citations, entity lists, or metadata objects. Hallucinated or malformed outputs break downstream agents.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <code>BaseStructuredOutputReactAgent</code> and <code>BaseStructuredOutputStrandsAgent</code> implement automatic retry on schema validation failure. On repeated failure, the system falls back to a stronger model. The Strands framework adds metric tracking and production-safe error handling.
+      </div>
+    </div>
+
+    <div class="card challenge-agent">
+      <h3><span class="tag badge-agent">Agentic</span> Workflow Routing Intelligence</h3>
+      <p>A single chat endpoint must correctly route queries to 6 different workflow types (RAG, <span class="masked" data-hint="Hint: Investment opportunity screening product · D··l S·······r">D··l S·······r</span>, Iterative Research, Multimodal, Summary, <span class="masked" data-hint="Hint: Human Resources AI policy assistant · HR G·····l">HR G·····l</span>). Incorrect routing sends a query to the wrong agent graph with wrong knowledge bases.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <strong>Workflow Identifier Agent</strong> classifies incoming queries and routes to the correct workflow. Product context, feature flags, and conversation history all inform routing decisions. The <code>WorkflowRegistry</code> maintains the routing map.
+      </div>
+    </div>
+
+    <div class="card challenge-agent">
+      <h3><span class="tag badge-agent">Agentic</span> Agent State Consistency</h3>
+      <p>Agents in a graph share a mutable <code>WorkflowState</code> dictionary. Without careful design, agents can overwrite each other's results, lose context from earlier steps, or see stale intermediate state.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <code>WorkflowState</code> is a TypedDict with explicit field ownership per agent. LangGraph's reducer pattern handles merge semantics. The state includes messages, retrieved context, extracted entities, and intermediate results — each agent reads only what it needs and writes only its own output keys.
+      </div>
+    </div>
+
+    <div class="card challenge-agent">
+      <h3><span class="tag badge-agent">Agentic</span> Extended Thinking &amp; Chain-of-Thought</h3>
+      <p>For complex deal screening and research queries, shallow one-shot LLM responses miss nuance. But enabling extended thinking (Claude's chain-of-thought) on every query is prohibitively expensive and slow.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> Extended thinking is a <strong>feature toggle per workflow</strong>. The Iterative Research and <span class="masked" data-hint="Hint: Investment opportunity screening product · D··l S·······r">D··l S·······r</span> workflows enable it; simpler FAQ-style queries don't. <code>Claude Sonnet 4</code> with extended thinking is used only where the quality gain justifies the cost.
+      </div>
+    </div>
+
+    <div class="card challenge-agent">
+      <h3><span class="tag badge-agent">Agentic</span> MCP &amp; Tool Extensibility</h3>
+      <p>As the platform grows, adding new tools (web search, calculators, external APIs) to agents shouldn't require rewriting agent logic or redeploying the entire platform.</p>
+      <div class="highlight">
+        <strong>Solution:</strong> <strong>Model Context Protocol (MCP)</strong> integration via FastMCP. Tools are registered as MCP servers and discovered at runtime. The <code>BaseReactAgent</code> supports dynamic tool loading, making the platform extensible without agent code changes.
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>🔁 Agent Fallback Chain</h3>
+        <p>Agents use a tiered model fallback strategy:</p>
+        <br>
+        <div class="pipeline" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <div class="pipe-step" style="min-width:200px">1. Primary model (e.g. Haiku 3.5)</div>
+          <div style="color:var(--blue-400);padding-left:14px">↓ on failure</div>
+          <div class="pipe-step" style="min-width:200px">2. Fallback model (e.g. Sonnet 4)</div>
+          <div style="color:var(--blue-400);padding-left:14px">↓ on repeated failure</div>
+          <div class="pipe-step" style="min-width:200px">3. Error logged + partial result</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🧩 Agent Base Classes</h3>
+        <div style="margin-top:6px">
+          <span class="tag">BaseAgent</span>
+          <span class="tag">BaseReactAgent</span>
+          <span class="tag">BaseStructuredOutputReactAgent</span>
+          <span class="tag">BaseStructuredOutputStrandsAgent</span>
+        </div>
+        <br>
+        <p>Each layer adds: structured output enforcement, ReAct reasoning loops, Strands metric tracking, and automatic retry + fallback. New agents inherit the full safety and resilience stack.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════ TECH STACK ════════════════ -->
+  <section id="stack">
+    <div class="section-header">
+      <div class="section-icon">🛠️</div>
+      <div>
+        <h2>Technology Stack</h2>
+        <span>Core technologies powering the platform</span>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <h3>🐍 Core Runtime</h3>
+        <span class="tag">Python 3.10+</span>
+        <span class="tag">FastAPI</span>
+        <span class="tag">Uvicorn</span>
+        <span class="tag">asyncio</span>
+      </div>
+      <div class="card">
+        <h3>🤖 AI / LLM</h3>
+        <span class="tag">LangChain</span>
+        <span class="tag">LangGraph</span>
+        <span class="tag">Strands</span>
+        <span class="tag">Anthropic SDK</span>
+      </div>
+      <div class="card">
+        <h3>☁️ Cloud / Models</h3>
+        <span class="tag">AWS Bedrock</span>
+        <span class="tag">Claude Sonnet 4</span>
+        <span class="tag">Haiku 3.5</span>
+        <span class="tag">Nova</span>
+      </div>
+      <div class="card">
+        <h3>🗄️ Storage</h3>
+        <span class="tag">PostgreSQL</span>
+        <span class="tag">Redis / MemoryDB</span>
+        <span class="tag">AWS S3</span>
+        <span class="tag">DynamoDB</span>
+      </div>
+      <div class="card">
+        <h3>🔍 Knowledge</h3>
+        <span class="tag">Bedrock KB</span>
+        <span class="tag">OpenSearch</span>
+        <span class="tag">Kendra</span>
+        <span class="tag">Web Search</span>
+      </div>
+      <div class="card">
+        <h3>📊 Observability</h3>
+        <span class="tag">OpenTelemetry</span>
+        <span class="tag">Prometheus</span>
+        <span class="tag">Grafana</span>
+        <span class="tag">LangSmith</span>
+      </div>
+      <div class="card">
+        <h3>📡 APIs / Protocols</h3>
+        <span class="tag">REST</span>
+        <span class="tag">WebSocket</span>
+        <span class="tag">SSE</span>
+        <span class="tag">FastMCP</span>
+      </div>
+      <div class="card">
+        <h3>🚀 Deploy</h3>
+        <span class="tag">Docker</span>
+        <span class="tag">Kubernetes</span>
+        <span class="tag">Helm</span>
+        <span class="tag">GitHub Actions</span>
+      </div>
+      <div class="card">
+        <h3>🗃️ Migrations / Test</h3>
+        <span class="tag">Flyway</span>
+        <span class="tag">pytest</span>
+        <span class="tag">Postman</span>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  GenAI <span class="masked" data-hint="Hint: AI-powered document analysis flagship product · I·····t A·····t">I·····t A·····t</span> API — <span class="masked" data-hint="Hint: Energy data &amp; analytics company · E·····s">E·····s</span> · Analysis generated June 2026
+</footer>
+
+</body>
+</html>
