@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitOps, Config Repo &amp; ArgoCD — Explained</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f6ff;
+      color: #1a2a3a;
+      line-height: 1.75;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 3px solid #4a90d9;
+      padding: 32px 48px;
+    }
+    header h1 { font-size: 1.85rem; color: #1e4a7a; font-weight: 700; }
+    header p  { color: #5a7a9a; margin-top: 6px; font-size: 0.96rem; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 36px 24px; }
+
+    h2 {
+      font-size: 1.2rem;
+      color: #1e4a7a;
+      border-left: 4px solid #4a90d9;
+      padding-left: 12px;
+      margin: 44px 0 18px;
+    }
+    h3 { font-size: 1.02rem; color: #2a5a8a; margin: 20px 0 8px; }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #cce0f5;
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(74,144,217,0.07);
+    }
+    .card p, .card li { font-size: 0.94rem; color: #2c3e50; }
+    .card ul { padding-left: 20px; margin-top: 8px; }
+    .card ul li { margin-bottom: 5px; }
+
+    .callout {
+      border-left: 4px solid #4a90d9;
+      background: #eaf3fc;
+      border-radius: 0 8px 8px 0;
+      padding: 13px 18px;
+      margin: 14px 0;
+      font-size: 0.92rem;
+      color: #1e4a7a;
+    }
+    .callout.ok   { border-color: #27ae60; background: #edfaf3; color: #1a5e35; }
+    .callout.warn { border-color: #e67e22; background: #fff8ef; color: #7a3a00; }
+    .callout.tip  { border-color: #8e44ad; background: #f5eefa; color: #4a1a6a; }
+
+    /* ── comparison grid ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 18px 0;
+    }
+    @media(max-width:680px){ .compare-grid { grid-template-columns: 1fr; } }
+    .cbox {
+      background: #fff;
+      border: 1px solid #cce0f5;
+      border-top: 4px solid;
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+    .cbox.blue  { border-top-color: #4a90d9; }
+    .cbox.green { border-top-color: #27ae60; }
+    .cbox h3 { margin-top: 0; }
+    .cbox ul  { padding-left: 18px; margin-top: 8px; }
+    .cbox li  { font-size: 0.88rem; color: #3a5068; margin-bottom: 4px; }
+
+    /* ── flow ── */
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0;
+      margin: 14px 0 20px;
+    }
+    .fbox {
+      background: #e8f2fc;
+      border: 2px solid #4a90d9;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #1e4a7a;
+      text-align: center;
+    }
+    .fbox.green { background: #e6f7ef; border-color: #27ae60; color: #1a5e35; }
+    .fbox.purple{ background: #f4eeff; border-color: #8e44ad; color: #4a1a6a; }
+    .fbox.orange{ background: #fff4e6; border-color: #e67e22; color: #7a3a00; }
+    .farrow { font-size: 1.3rem; color: #4a90d9; padding: 0 8px; line-height: 1; }
+
+    /* ── file tree ── */
+    .tree-wrap {
+      background: #0f1e2e;
+      border-radius: 10px;
+      padding: 24px 28px;
+      overflow-x: auto;
+    }
+    .tree {
+      font-family: 'Cascadia Code','Fira Code','Courier New', monospace;
+      font-size: 0.86rem;
+      line-height: 1.85;
+      white-space: pre;
+      color: #c9e4ff;
+    }
+    .tree .dir   { color: #79c0ff; font-weight: 700; }
+    .tree .file  { color: #a5d6ff; }
+    .tree .cmt   { color: #5a8a9a; font-style: italic; }
+    .tree .patch { color: #ffd700; font-weight: 700; }
+    .tree .env   { color: #98e88a; }
+
+    /* ── file content blocks ── */
+    pre {
+      background: #0f1e2e;
+      color: #c9e4ff;
+      border-radius: 8px;
+      padding: 18px 22px;
+      font-size: 0.83rem;
+      overflow-x: auto;
+      margin: 14px 0;
+      font-family: 'Cascadia Code','Fira Code', monospace;
+      line-height: 1.7;
+    }
+    .hl-key  { color: #79c0ff; }
+    .hl-val  { color: #a5d6ff; }
+    .hl-str  { color: #98e88a; }
+    .hl-cmt  { color: #5a8a9a; font-style: italic; }
+    .hl-num  { color: #ffd700; }
+    .hl-patch{ color: #ffd700; font-weight: 700; }
+
+    /* ── file label ── */
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #4a90d9;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 6px 6px 0 0;
+      margin-bottom: -2px;
+    }
+
+    /* ── badge ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.73rem;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: #e8f2fc;
+      color: #1e4a7a;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+    .badge.yellow { background: #fef9e0; color: #7a5500; }
+    .badge.green  { background: #e6f7ef; color: #1a5e35; }
+    .badge.purple { background: #f4eeff; color: #4a1a6a; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-top: 12px;
+    }
+    th { background: #4a90d9; color: #fff; padding: 10px 14px; text-align: left; }
+    td { padding: 9px 14px; border-bottom: 1px solid #d0e6f8; color: #2c3e50; }
+    tr:nth-child(even) td { background: #f4f9ff; }
+
+    footer {
+      text-align: center;
+      padding: 28px;
+      color: #8aaac0;
+      font-size: 0.83rem;
+      border-top: 1px solid #cce0f5;
+      margin-top: 48px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>GitOps, Config Repo &amp; ArgoCD — Complete Guide</h1>
+  <p>How your merged code travels from GitHub → Docker image → Kubernetes pod &nbsp;|&nbsp;
+     Reconstructed from <code>on_merge.yml</code></p>
+</header>
+
+<div class="container">
+
+
+<!-- ═══════════════════════════════════════════
+     PART 1 — WHAT IS GITOPS?
+     ═══════════════════════════════════════════ -->
+<h2>Part 1 — What is GitOps?</h2>
+
+<div class="card">
+  <p>
+    <strong>GitOps</strong> is a deployment philosophy where <strong>Git is the single source
+    of truth for what should be running in your infrastructure</strong>. Instead of
+    running <code>kubectl apply</code> or <code>helm upgrade</code> manually, you
+    <em>commit a change to a Git repo</em> and an automated controller reconciles the cluster
+    to match.
+  </p>
+
+  <h3>Traditional Deploy vs GitOps Deploy</h3>
+  <div class="compare-grid">
+    <div class="cbox blue">
+      <h3>Traditional (Push) Deploy</h3>
+      <ul>
+        <li>CI pipeline runs <code>kubectl apply</code> directly</li>
+        <li>Cluster state lives only in the cluster</li>
+        <li>Hard to audit — who changed what, when?</li>
+        <li>Rollback = re-run old pipeline</li>
+        <li>Secrets &amp; configs drift over time</li>
+      </ul>
+    </div>
+    <div class="cbox green">
+      <h3>GitOps (Pull) Deploy</h3>
+      <ul>
+        <li>CI only updates a config file in Git</li>
+        <li>Cluster state is declared in Git — always auditable</li>
+        <li>Every deploy is a Git commit — full history</li>
+        <li>Rollback = <code>git revert</code></li>
+        <li>Cluster self-heals if someone manually changes it</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <strong>Key rule:</strong> No one touches the cluster directly.
+    Every change goes through Git first. The cluster <em>pulls</em> its desired state
+    from the repo — it is never <em>pushed</em> to.
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PART 2 — WHAT IS A CONFIG REPO?
+     ═══════════════════════════════════════════ -->
+<h2>Part 2 — What is a Config Repo?</h2>
+
+<div class="card">
+  <p>
+    A <strong>config repo</strong> (also called a <em>GitOps repo</em> or
+    <em>deployment repo</em>) is a <strong>separate Git repository</strong> that contains
+    only Kubernetes configuration — no application source code, no business logic.
+  </p>
+  <ul>
+    <li>
+      <strong>App repo</strong> (<code>&lt;your-api-name&gt;</code>) — holds your Python code,
+      Dockerfile, tests. This is what developers work in.
+    </li>
+    <li>
+      <strong>Config repo</strong> — holds Helm values, image tags, replica counts, env vars,
+      resource limits. This is what ArgoCD reads.
+    </li>
+  </ul>
+
+  <h3>Why separate repos?</h3>
+  <div class="compare-grid">
+    <div class="cbox blue">
+      <h3>App Repo changes when…</h3>
+      <ul>
+        <li>A developer pushes new features or bug fixes</li>
+        <li>Dependencies are upgraded</li>
+        <li>Tests are added or changed</li>
+      </ul>
+    </div>
+    <div class="cbox green">
+      <h3>Config Repo changes when…</h3>
+      <ul>
+        <li>A new Docker image tag is released <span class="badge yellow">← this pipeline</span></li>
+        <li>Replica count is scaled up/down</li>
+        <li>Environment variables change</li>
+        <li>Resource limits are tuned</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    In your pipeline, the <code>deploy-dispatcher</code> action <strong>opens and edits
+    the config repo</strong> — it bumps the image tag value and commits it.
+    ArgoCD then sees that commit and deploys the new image.
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PART 3 — WHAT IS ARGOCD / FLUX?
+     ═══════════════════════════════════════════ -->
+<h2>Part 3 — What is ArgoCD? What is Flux?</h2>
+
+<div class="card">
+  <p>
+    Both are <strong>GitOps controllers</strong> — software that runs inside your Kubernetes
+    cluster and continuously watches a Git repository. When it detects a change, it applies
+    that change to the cluster automatically.
+  </p>
+
+  <div class="compare-grid">
+    <div class="cbox blue">
+      <h3>ArgoCD <span class="badge purple">likely used here</span></h3>
+      <ul>
+        <li>Runs as pods inside Kubernetes</li>
+        <li>Has a visual web UI — shows sync status per app</li>
+        <li>Polls the config repo every ~3 minutes</li>
+        <li>Can show diff between Git and live cluster</li>
+        <li>Supports manual sync + auto-sync modes</li>
+        <li>Each app is declared as an <code>Application</code> CRD</li>
+      </ul>
+    </div>
+    <div class="cbox green">
+      <h3>Flux</h3>
+      <ul>
+        <li>Also runs inside Kubernetes</li>
+        <li>More CLI-oriented, no built-in UI</li>
+        <li>Uses <code>GitRepository</code> + <code>Kustomization</code> CRDs</li>
+        <li>Slightly more lightweight</li>
+        <li>Both achieve the same GitOps outcome</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What ArgoCD does, step by step</h3>
+  <div class="flow" style="flex-direction:column; align-items:flex-start; gap:10px; margin-top:14px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="fbox">1. ArgoCD watches<br/>config repo (Git)</div>
+      <div class="farrow">→</div>
+      <div class="fbox purple">2. deploy-dispatcher<br/>commits new image tag</div>
+      <div class="farrow">→</div>
+      <div class="fbox purple">3. ArgoCD detects<br/>new commit</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px; margin-left: 40px;">
+      <div class="farrow" style="transform:rotate(90deg);">→</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="fbox green">6. Pod running<br/>new image ✓</div>
+      <div class="farrow">←</div>
+      <div class="fbox green">5. Kubernetes does<br/>rolling update</div>
+      <div class="farrow">←</div>
+      <div class="fbox green">4. ArgoCD applies<br/>new Helm values</div>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    The developer <strong>never runs kubectl</strong>. They merge a PR → the pipeline bumps
+    the image tag in Git → ArgoCD does the rest automatically within minutes.
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PART 4 — RECONSTRUCTED CONFIG REPO
+     ═══════════════════════════════════════════ -->
+<h2>Part 4 — Reconstructed Config Repo (from on_merge.yml)</h2>
+
+<div class="card">
+  <p>
+    Here is what the config repo most likely looks like, inferred from the values in
+    <code>on_merge.yml</code>:
+  </p>
+  <table>
+    <tr><th>Known signal</th><th>Value from on_merge.yml</th><th>Config repo meaning</th></tr>
+    <tr><td>app-name</td><td><code>&lt;your-app-short-name&gt;</code></td><td>Folder / ArgoCD app name</td></tr>
+    <tr><td>team-name</td><td><code>&lt;your-team-name&gt;</code></td><td>Top-level namespace / folder</td></tr>
+    <tr><td>environment</td><td><code>dev</code></td><td>Sub-folder per environment</td></tr>
+    <tr><td>image-tag-path</td><td><code>.&lt;company&gt;-deployment.image.tag</code></td><td>YAML key that gets patched</td></tr>
+    <tr><td>image name</td><td><code>&lt;your-api-name&gt;</code></td><td>Docker image name in values</td></tr>
+    <tr><td>DB secret prefix</td><td><code>&lt;your-secret-prefix&gt;</code></td><td>AWS secret referenced in values</td></tr>
+  </table>
+</div>
+
+<h3 style="margin: 28px 0 14px; color:#1e4a7a; font-size:1.05rem;">
+  Repository Structure
+</h3>
+
+<div class="tree-wrap">
+<div class="tree"><span class="dir">&lt;company&gt;-gitops-config/</span>               <span class="cmt">← the config repo (separate from app repo)</span>
+│
+├── <span class="dir">apps/</span>
+│   └── <span class="dir">&lt;your-team-name&gt;/</span>               <span class="cmt">← team-name from on_merge.yml</span>
+│       └── <span class="dir">&lt;your-app-short-name&gt;/</span>        <span class="cmt">← app-name from on_merge.yml</span>
+│           │
+│           ├── <span class="dir">dev/</span>                        <span class="cmt">← environment: "dev"</span>
+│           │   ├── <span class="patch">&lt;company&gt;-deployment.yaml</span>  <span class="cmt">← ⭐ THIS FILE GETS PATCHED by deploy-dispatcher</span>
+│           │   └── <span class="file">values.yaml</span>            <span class="cmt">← Helm overrides for dev</span>
+│           │
+│           └── <span class="dir">prod/</span>                       <span class="cmt">← future: prod deploy would patch this</span>
+│               ├── <span class="file">&lt;company&gt;-deployment.yaml</span>
+│               └── <span class="file">values.yaml</span>
+│
+├── <span class="dir">charts/</span>
+│   └── <span class="dir">&lt;your-app-short-name&gt;/</span>            <span class="cmt">← Helm chart (or references an external chart)</span>
+│       ├── <span class="file">Chart.yaml</span>
+│       ├── <span class="file">values.yaml</span>                    <span class="cmt">← default / base values</span>
+│       └── <span class="dir">templates/</span>
+│           ├── <span class="file">deployment.yaml</span>            <span class="cmt">← Kubernetes Deployment manifest</span>
+│           ├── <span class="file">service.yaml</span>               <span class="cmt">← Kubernetes Service</span>
+│           ├── <span class="file">ingress.yaml</span>               <span class="cmt">← HTTP routing</span>
+│           ├── <span class="file">configmap.yaml</span>             <span class="cmt">← non-secret env config</span>
+│           └── <span class="file">hpa.yaml</span>                   <span class="cmt">← Horizontal Pod Autoscaler</span>
+│
+└── <span class="dir">argocd/</span>
+    └── <span class="dir">applications/</span>
+        ├── <span class="file">&lt;your-app-short-name&gt;-dev.yaml</span>    <span class="cmt">← ArgoCD Application CRD for dev</span>
+        └── <span class="file">&lt;your-app-short-name&gt;-prod.yaml</span>   <span class="cmt">← ArgoCD Application CRD for prod</span>
+</div>
+</div>
+
+
+<!-- ── File contents ── -->
+<h3 style="margin: 32px 0 14px; color:#1e4a7a; font-size:1.05rem;">
+  File Contents — What's Inside Each Key File
+</h3>
+
+<!-- FILE 1 -->
+<div class="file-label">&#128196; apps/&lt;team&gt;/&lt;app&gt;/dev/&lt;company&gt;-deployment.yaml
+  &nbsp;<span style="background:rgba(255,215,0,0.25);padding:2px 8px;border-radius:4px;font-size:0.78rem;">⭐ patched by deploy-dispatcher on every merge</span>
+</div>
+<pre><span class="hl-cmt"># This is the file deploy-dispatcher edits.</span>
+<span class="hl-cmt"># image-tag-path: ".&lt;company&gt;-deployment.image.tag" — that's exactly this key.</span>
+
+<span class="hl-key">&lt;company&gt;-deployment:</span>
+  <span class="hl-key">image:</span>
+    <span class="hl-key">repository:</span> <span class="hl-str">&lt;registry-url&gt;/&lt;your-api-name&gt;</span>
+    <span class="hl-key">tag:</span> <span class="hl-patch">a1b2c3d</span>          <span class="hl-cmt"># ← deploy-dispatcher writes the new Git SHA here</span>
+  <span class="hl-key">app:</span> <span class="hl-str">&lt;your-app-short-name&gt;</span>
+  <span class="hl-key">team:</span> <span class="hl-str">&lt;your-team-name&gt;</span>
+  <span class="hl-key">environment:</span> <span class="hl-str">dev</span></pre>
+
+<!-- FILE 2 -->
+<div class="file-label">&#128196; apps/&lt;team&gt;/&lt;app&gt;/dev/values.yaml</div>
+<pre><span class="hl-cmt"># Dev-specific Helm overrides. Merged with the base chart values.</span>
+
+<span class="hl-key">replicaCount:</span> <span class="hl-num">1</span>             <span class="hl-cmt"># dev runs 1 replica to save cost</span>
+
+<span class="hl-key">image:</span>
+  <span class="hl-key">repository:</span> <span class="hl-str">&lt;registry-url&gt;/&lt;your-api-name&gt;</span>
+  <span class="hl-key">pullPolicy:</span> <span class="hl-str">Always</span>
+
+<span class="hl-key">env:</span>
+  <span class="hl-key">ENVIRONMENT:</span> <span class="hl-str">dev</span>
+  <span class="hl-key">LOG_LEVEL:</span> <span class="hl-str">DEBUG</span>
+  <span class="hl-key">DB_NAME:</span> <span class="hl-str">&lt;your-db-name&gt;</span>
+
+<span class="hl-key">secrets:</span>
+  <span class="hl-key">awsSecretName:</span> <span class="hl-str">&lt;your-secret-prefix&gt;-dev</span>   <span class="hl-cmt"># pulled from AWS Secrets Manager</span>
+
+<span class="hl-key">resources:</span>
+  <span class="hl-key">requests:</span>
+    <span class="hl-key">cpu:</span> <span class="hl-str">"250m"</span>
+    <span class="hl-key">memory:</span> <span class="hl-str">"512Mi"</span>
+  <span class="hl-key">limits:</span>
+    <span class="hl-key">cpu:</span> <span class="hl-str">"1000m"</span>
+    <span class="hl-key">memory:</span> <span class="hl-str">"1Gi"</span>
+
+<span class="hl-key">ingress:</span>
+  <span class="hl-key">enabled:</span> <span class="hl-str">true</span>
+  <span class="hl-key">host:</span> <span class="hl-str">&lt;your-app-short-name&gt;.dev.&lt;company-domain&gt;</span></pre>
+
+<!-- FILE 3 -->
+<div class="file-label">&#128196; argocd/applications/&lt;app&gt;-dev.yaml</div>
+<pre><span class="hl-cmt"># ArgoCD Application CRD — tells ArgoCD what to watch and where to deploy.</span>
+<span class="hl-cmt"># ArgoCD reads this and continuously syncs the cluster to match the config repo.</span>
+
+<span class="hl-key">apiVersion:</span> <span class="hl-str">argoproj.io/v1alpha1</span>
+<span class="hl-key">kind:</span> <span class="hl-str">Application</span>
+<span class="hl-key">metadata:</span>
+  <span class="hl-key">name:</span> <span class="hl-str">&lt;your-app-short-name&gt;-dev</span>
+  <span class="hl-key">namespace:</span> <span class="hl-str">argocd</span>
+<span class="hl-key">spec:</span>
+  <span class="hl-key">project:</span> <span class="hl-str">&lt;your-team-name&gt;</span>
+
+  <span class="hl-key">source:</span>
+    <span class="hl-key">repoURL:</span> <span class="hl-str">https://github.com/&lt;your-org&gt;/&lt;company&gt;-gitops-config</span>
+    <span class="hl-key">targetRevision:</span> <span class="hl-str">main</span>
+    <span class="hl-key">path:</span> <span class="hl-str">apps/&lt;your-team-name&gt;/&lt;your-app-short-name&gt;/dev</span>  <span class="hl-cmt"># ← watches this folder</span>
+
+  <span class="hl-key">destination:</span>
+    <span class="hl-key">server:</span> <span class="hl-str">https://kubernetes.default.svc</span>
+    <span class="hl-key">namespace:</span> <span class="hl-str">&lt;your-team-name&gt;-dev</span>         <span class="hl-cmt"># K8s namespace where pods land</span>
+
+  <span class="hl-key">syncPolicy:</span>
+    <span class="hl-key">automated:</span>
+      <span class="hl-key">prune:</span> <span class="hl-str">true</span>       <span class="hl-cmt"># delete removed resources automatically</span>
+      <span class="hl-key">selfHeal:</span> <span class="hl-str">true</span>    <span class="hl-cmt"># if someone manually changes the cluster, revert it</span>
+    <span class="hl-key">syncOptions:</span>
+      <span class="hl-str">- CreateNamespace=true</span></pre>
+
+<!-- FILE 4 -->
+<div class="file-label">&#128196; charts/&lt;app&gt;/templates/deployment.yaml</div>
+<pre><span class="hl-cmt"># Kubernetes Deployment template. Helm fills in {{ .Values.* }} at deploy time.</span>
+
+<span class="hl-key">apiVersion:</span> <span class="hl-str">apps/v1</span>
+<span class="hl-key">kind:</span> <span class="hl-str">Deployment</span>
+<span class="hl-key">metadata:</span>
+  <span class="hl-key">name:</span> <span class="hl-str">{{ .Values.app | default "&lt;your-app-short-name&gt;" }}</span>
+  <span class="hl-key">namespace:</span> <span class="hl-str">{{ .Release.Namespace }}</span>
+<span class="hl-key">spec:</span>
+  <span class="hl-key">replicas:</span> <span class="hl-str">{{ .Values.replicaCount }}</span>
+  <span class="hl-key">selector:</span>
+    <span class="hl-key">matchLabels:</span>
+      <span class="hl-key">app:</span> <span class="hl-str">{{ .Values.app }}</span>
+  <span class="hl-key">template:</span>
+    <span class="hl-key">spec:</span>
+      <span class="hl-key">containers:</span>
+        <span class="hl-str">- name:</span> <span class="hl-str">{{ .Values.app }}</span>
+          <span class="hl-key">image:</span> <span class="hl-patch">{{ .Values.image.repository }}:{{ .Values.image.tag }}</span>
+          <span class="hl-cmt">          # ↑ this is where the patched SHA gets injected into the pod spec</span>
+          <span class="hl-key">imagePullPolicy:</span> <span class="hl-str">{{ .Values.image.pullPolicy }}</span>
+          <span class="hl-key">envFrom:</span>
+            <span class="hl-str">- secretRef:</span>
+                <span class="hl-key">name:</span> <span class="hl-str">{{ .Values.secrets.awsSecretName }}</span>
+          <span class="hl-key">resources:</span>
+            <span class="hl-str">{{- toYaml .Values.resources | nindent 12 }}</span></pre>
+
+
+<!-- ═══════════════════════════════════════════
+     PART 5 — END-TO-END FLOW RECAP
+     ═══════════════════════════════════════════ -->
+<h2>Part 5 — Full End-to-End Flow (Everything Connected)</h2>
+
+<div class="card">
+<div class="flow" style="flex-direction:column; align-items:flex-start; gap:8px;">
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="fbox" style="min-width:200px;">1. Developer merges PR<br/>into <code>main</code> (app repo)</div>
+    <div class="farrow">→</div>
+    <div class="fbox" style="min-width:200px;">2. on_merge.yml<br/>GitHub Action fires</div>
+  </div>
+  <div style="margin-left:22px; color:#4a90d9; font-size:1.2rem;">↓</div>
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="fbox" style="min-width:200px;">3. Docker image built<br/>&amp; pushed to registry<br/><code>tag = abc1234</code></div>
+    <div class="farrow">→</div>
+    <div class="fbox" style="min-width:200px;">4. Flyway runs SQL<br/>migrations on dev DB</div>
+  </div>
+  <div style="margin-left:22px; color:#4a90d9; font-size:1.2rem;">↓</div>
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="fbox purple" style="min-width:200px;">5. deploy-dispatcher<br/>opens <strong>config repo</strong><br/>patches image.tag → <code>abc1234</code></div>
+    <div class="farrow">→</div>
+    <div class="fbox purple" style="min-width:200px;">6. Git commit pushed<br/>to config repo<br/>(using GitHub App token)</div>
+  </div>
+  <div style="margin-left:22px; color:#8e44ad; font-size:1.2rem;">↓</div>
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="fbox green" style="min-width:200px;">7. ArgoCD detects<br/>new commit in<br/>config repo</div>
+    <div class="farrow">→</div>
+    <div class="fbox green" style="min-width:200px;">8. ArgoCD applies<br/>updated Helm values<br/>to K8s cluster</div>
+    <div class="farrow">→</div>
+    <div class="fbox green" style="min-width:200px;">9. Kubernetes pulls<br/>new image &amp; does<br/>rolling pod update ✓</div>
+  </div>
+
+</div>
+
+  <div class="callout ok" style="margin-top:20px;">
+    From the moment the PR is merged to a new pod running in Kubernetes,
+    <strong>zero manual steps</strong> are required. The developer's git merge
+    is the only input.
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     PART 6 — KEY TERMS GLOSSARY
+     ═══════════════════════════════════════════ -->
+<h2>Part 6 — Key Terms at a Glance</h2>
+
+<table>
+  <tr><th>Term</th><th>What it means in this context</th></tr>
+  <tr>
+    <td><strong>GitOps</strong></td>
+    <td>Using Git commits as the trigger and source of truth for all deployments</td>
+  </tr>
+  <tr>
+    <td><strong>Config repo</strong></td>
+    <td>A separate repo holding only Kubernetes/Helm config — no app code</td>
+  </tr>
+  <tr>
+    <td><strong>ArgoCD</strong></td>
+    <td>A Kubernetes controller that watches the config repo and syncs the cluster to match it</td>
+  </tr>
+  <tr>
+    <td><strong>deploy-dispatcher</strong></td>
+    <td>&lt;Company&gt; SRE action that bumps the image tag in the config repo on every merge</td>
+  </tr>
+  <tr>
+    <td><strong>image-tag-path</strong></td>
+    <td>The YAML dot-path inside the config file that holds the Docker tag — <code>.&lt;company&gt;-deployment.image.tag</code></td>
+  </tr>
+  <tr>
+    <td><strong>Helm</strong></td>
+    <td>Kubernetes package manager — chart templates + values files = rendered K8s manifests</td>
+  </tr>
+  <tr>
+    <td><strong>Rolling update</strong></td>
+    <td>Kubernetes replaces pods one-by-one with the new image — zero downtime</td>
+  </tr>
+  <tr>
+    <td><strong>Self-heal</strong></td>
+    <td>ArgoCD detects manual cluster changes and reverts them to match Git</td>
+  </tr>
+  <tr>
+    <td><strong>Application CRD</strong></td>
+    <td>ArgoCD's custom resource that maps a Git folder to a K8s namespace</td>
+  </tr>
+</table>
+
+</div>
+
+<footer>
+  Reconstructed from <code>.github/workflows/on_merge.yml</code> &nbsp;|&nbsp;
+  Company identifiers masked &nbsp;|&nbsp; For internal learning use
+</footer>
+
+</body>
+</html>
